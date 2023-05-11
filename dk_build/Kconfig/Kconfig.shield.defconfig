@@ -1,0 +1,2 @@
+osource "f:/Github/THU_student_project_SS23_schmidt/Software/aktor_relais/boards/shields/*/Kconfig.defconfig"
+osource "D:/ncs/v2.3.0/nrf/boards/shields/*/Kconfig.defconfig"

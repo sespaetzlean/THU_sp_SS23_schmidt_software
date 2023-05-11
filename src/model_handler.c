@@ -9,119 +9,176 @@
 #include <dk_buttons_and_leds.h>
 #include "model_handler.h"
 
-static void led_set(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
+/// @brief control state of a relais
+/// @param srv server instance	(should include current OnOff-Value)
+/// @param ctx context information for received message, (source, destination, ...)
+/// @param set new onOff Status
+/// @param rsp used to store the response
+static void relais_set(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    const struct bt_mesh_onoff_set *set,
 		    struct bt_mesh_onoff_status *rsp);
 
-static void led_get(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
+/// @brief get state of a relais
+/// @param srv server instance	(should include current OnOff-Value)
+/// @param ctx context information for received message, (source, destination, ...)
+/// @param rsp used to store the response
+static void relais_get(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    struct bt_mesh_onoff_status *rsp);
 
 static const struct bt_mesh_onoff_srv_handlers onoff_handlers = {
-	.set = led_set,
-	.get = led_get,
+	.set = relais_set,
+	.get = relais_get,
 };
 
-struct led_ctx {
-	struct bt_mesh_onoff_srv srv;
-	struct k_work_delayable work;
-	uint32_t remaining;
-	bool value;
+struct relais_ctx {
+	struct bt_mesh_onoff_srv srv;	//server instance (should include current OnOff-Value)
+	struct k_work_delayable work;	//what should be done next (will be scheduled), so what should happen with the relais
+	uint32_t remaining;				//remaining time until operation should be executed
+	bool value;						//target/future value of the relais
 };
 
-static struct led_ctx led_ctx[] = {
-#if DT_NODE_EXISTS(DT_ALIAS(led0))
+//initialise the OnOff-Model
+//this is a list in case there will be multiple elements
+static struct relais_ctx relais_ctx[] = {
 	{ .srv = BT_MESH_ONOFF_SRV_INIT(&onoff_handlers) },
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(led1))
-	{ .srv = BT_MESH_ONOFF_SRV_INIT(&onoff_handlers) },
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(led2))
-	{ .srv = BT_MESH_ONOFF_SRV_INIT(&onoff_handlers) },
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(led3))
-	{ .srv = BT_MESH_ONOFF_SRV_INIT(&onoff_handlers) },
-#endif
 };
 
-static void led_transition_start(struct led_ctx *led)
+
+/// @brief schedules the relais toggle
+/// @param relais the relais that should be toggled
+static void relais_transition_start(struct relais_ctx *relais)
 {
-	int led_idx = led - &led_ctx[0];
+	int relais_idx = relais - &relais_ctx[0];	//?what is happening here
+	//could be the offset in the array, so on which position this relais_ctx instance is in the array
 
-	/* As long as the transition is in progress, the onoff
-	 * state is "on":
-	 */
-	dk_set_led(led_idx, true);
-	k_work_reschedule(&led->work, K_MSEC(led->remaining));
-	led->remaining = 0;
+	//exp As long as the transition is in progress, the onoff state shall be "on"
+	dk_set_led(relais_idx, true);		//!richtigen Pin auswählen!!!
+	k_work_reschedule(&relais->work, K_MSEC(relais->remaining));	//the work will be scheduled again after the "remaining"-value
+	relais->remaining = 0;		//so remaining can be set to 0 now
 }
 
-static void led_status(struct led_ctx *led, struct bt_mesh_onoff_status *status)
+/// @brief get the current status (including transition time) and save it in the status parameter
+/// @param relais the relais that should be queried
+/// @param status here the current status will be saved
+static void relais_status(const struct relais_ctx *relais, struct bt_mesh_onoff_status *status)
 {
 	/* Do not include delay in the remaining time. */
-	status->remaining_time = led->remaining ? led->remaining :
-		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&led->work));
-	status->target_on_off = led->value;
+	status->remaining_time = relais->remaining ? relais->remaining :	
+		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&relais->work));	//in case relais->remaining is ZERO (which can happen when relais_transition_start was executed), it is checked for when this execution is scheduled)
+	status->target_on_off = relais->value;
 	/* As long as the transition is in progress, the onoff state is "on": */
-	status->present_on_off = led->value || status->remaining_time;
+	status->present_on_off = relais->value || status->remaining_time;
 }
 
-static void led_set(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
+
+
+/// @brief set a (future) status for the relais
+/// @param srv server instance	(should include current OnOff-Value)
+/// @param ctx context information for received message, (source, destination, ...)
+/// @param set new state that should be set
+/// @param rsp give in case you want a status response after set
+static void relais_set(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    const struct bt_mesh_onoff_set *set,
 		    struct bt_mesh_onoff_status *rsp)
 {
-	struct led_ctx *led = CONTAINER_OF(srv, struct led_ctx, srv);
-	int led_idx = led - &led_ctx[0];
+	struct relais_ctx *relais = CONTAINER_OF(srv, struct relais_ctx, srv);
+	int relais_idx = relais - &relais_ctx[0];	//?what is happening here
+	//could be the offset in the array, so on which position this relais_ctx instance is in the array
 
-	if (set->on_off == led->value) {
+	//when future value == current value
+	if (set->on_off == relais->value) {
 		goto respond;
 	}
 
-	led->value = set->on_off;
+	relais->value = set->on_off;
 	if (!bt_mesh_model_transition_time(set->transition)) {
-		led->remaining = 0;
-		dk_set_led(led_idx, set->on_off);
+		//execute if the transition time is already 0
+		relais->remaining = 0;
+		dk_set_led(relais_idx, set->on_off);
 		goto respond;
 	}
 
-	led->remaining = set->transition->time;
+	relais->remaining = set->transition->time;
 
 	if (set->transition->delay) {
-		k_work_reschedule(&led->work, K_MSEC(set->transition->delay));
+		k_work_reschedule(&relais->work, K_MSEC(set->transition->delay));
 	} else {
-		led_transition_start(led);
+		relais_transition_start(relais);
 	}
 
 respond:
-	if (rsp) {
-		led_status(led, rsp);
+	if (rsp) {	//only send response if a status pointer was given. Use the before declared function
+		relais_status(relais, rsp);
 	}
 }
 
-static void led_get(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
+/// @brief wrapper for relais_status
+/// @param srv 
+/// @param ctx 
+/// @param rsp 
+static void relais_get(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    struct bt_mesh_onoff_status *rsp)
 {
-	struct led_ctx *led = CONTAINER_OF(srv, struct led_ctx, srv);
+	struct relais_ctx *relais = CONTAINER_OF(srv, struct relais_ctx, srv);
 
-	led_status(led, rsp);
+	relais_status(relais, rsp);
 }
 
-static void led_work(struct k_work *work)
-{
-	struct led_ctx *led = CONTAINER_OF(work, struct led_ctx, work.work);
-	int led_idx = led - &led_ctx[0];
 
-	if (led->remaining) {
-		led_transition_start(led);
+static void relais_work(struct k_work *work)
+{
+	struct relais_ctx *relais = CONTAINER_OF(work, struct relais_ctx, work.work);
+	int relais_idx = relais - &relais_ctx[0];//?what is happening here
+	//could be the offset in the array, so on which position this relais_ctx instance is in the array
+
+	if (relais->remaining) {
+		relais_transition_start(relais);
 	} else {
-		dk_set_led(led_idx, led->value);
+		dk_set_led(relais_idx, relais->value);
 
 		/* Publish the new value at the end of the transition */
 		struct bt_mesh_onoff_status status;
 
-		led_status(led, &status);
-		bt_mesh_onoff_srv_pub(&led->srv, NULL, &status);
+		relais_status(relais, &status);
+		bt_mesh_onoff_srv_pub(&relais->srv, NULL, &status);
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// health gedöns -----------------------------------------------------
 
 /* Set up a repeating delayed work to blink the DK's LEDs when attention is
  * requested.
@@ -178,34 +235,32 @@ static struct bt_mesh_health_srv health_srv = {
 
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
-static struct bt_mesh_elem elements[] = {
-#if DT_NODE_EXISTS(DT_ALIAS(led0))
-	BT_MESH_ELEM(
-		1, BT_MESH_MODEL_LIST(
-			BT_MESH_MODEL_CFG_SRV,
-			BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
-			BT_MESH_MODEL_ONOFF_SRV(&led_ctx[0].srv)),
-		BT_MESH_MODEL_NONE),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(led1))
-	BT_MESH_ELEM(
-		2, BT_MESH_MODEL_LIST(BT_MESH_MODEL_ONOFF_SRV(&led_ctx[1].srv)),
-		BT_MESH_MODEL_NONE),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(led2))
-	BT_MESH_ELEM(
-		3, BT_MESH_MODEL_LIST(BT_MESH_MODEL_ONOFF_SRV(&led_ctx[2].srv)),
-		BT_MESH_MODEL_NONE),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(led3))
-	BT_MESH_ELEM(
-		4, BT_MESH_MODEL_LIST(BT_MESH_MODEL_ONOFF_SRV(&led_ctx[3].srv)),
-		BT_MESH_MODEL_NONE),
-#endif
+
+
+
+
+
+
+
+
+
+
+
+static struct bt_mesh_model std_relais_models[] = {
+	BT_MESH_MODEL_CFG_SRV,		//standard configuration server model that every node has in its first element
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	//same applies to the health model: every node has in its first element
+	BT_MESH_MODEL_ONOFF_SRV(&relais_ctx[0].srv),
 };
 
+//exp: insert all elements the node consists of
+//location descriptor is used to number the elements in case there are multiple elements of same kind
+static struct bt_mesh_elem elements[] = {
+	BT_MESH_ELEM(1, std_relais_models, BT_MESH_MODEL_NONE),
+};
+
+/// @brief compose the node
 static const struct bt_mesh_comp comp = {
-	.cid = CONFIG_BT_COMPANY_ID,
+	.cid = CONFIG_BT_COMPANY_ID,	//set id that is defined in the prj.conf-file
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
 };
@@ -214,8 +269,8 @@ const struct bt_mesh_comp *model_handler_init(void)
 {
 	k_work_init_delayable(&attention_blink_work, attention_blink);
 
-	for (int i = 0; i < ARRAY_SIZE(led_ctx); ++i) {
-		k_work_init_delayable(&led_ctx[i].work, led_work);
+	for (int i = 0; i < ARRAY_SIZE(relais_ctx); ++i) {
+		k_work_init_delayable(&relais_ctx[i].work, relais_work);
 	}
 
 	return &comp;

@@ -35,24 +35,20 @@ struct relais_ctx {
 	struct k_work_delayable work;	//what should be done next (will be scheduled), so what should happen with the relais
 	uint32_t remaining;				//remaining time until operation should be executed
 	bool value;						//target/future value of the relais
+	int pinNumber;
 };
 
 //initialise the OnOff-Model
 //this is a list in case there will be multiple elements
-static struct relais_ctx relais_ctx[] = {
-	{ .srv = BT_MESH_ONOFF_SRV_INIT(&onoff_handlers) },
-};
+static struct relais_ctx myRelais_ctx = { .srv = BT_MESH_ONOFF_SRV_INIT(&onoff_handlers), .pinNumber = 0};
 
 
 /// @brief schedules the relais toggle
 /// @param relais the relais that should be toggled
 static void relais_transition_start(struct relais_ctx *relais)
 {
-	int relais_idx = relais - &relais_ctx[0];	//?what is happening here
-	//could be the offset in the array, so on which position this relais_ctx instance is in the array
-
 	//exp As long as the transition is in progress, the onoff state shall be "on"
-	dk_set_led(relais_idx, true);		//!richtigen Pin auswählen!!!
+	dk_set_led(relais->pinNumber, true);
 	k_work_reschedule(&relais->work, K_MSEC(relais->remaining));	//the work will be scheduled again after the "remaining"-value
 	relais->remaining = 0;		//so remaining can be set to 0 now
 }
@@ -82,8 +78,6 @@ static void relais_set(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ct
 		    struct bt_mesh_onoff_status *rsp)
 {
 	struct relais_ctx *relais = CONTAINER_OF(srv, struct relais_ctx, srv);
-	int relais_idx = relais - &relais_ctx[0];	//?what is happening here
-	//could be the offset in the array, so on which position this relais_ctx instance is in the array
 
 	//when future value == current value
 	if (set->on_off == relais->value) {
@@ -94,7 +88,7 @@ static void relais_set(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ct
 	if (!bt_mesh_model_transition_time(set->transition)) {
 		//execute if the transition time is already 0
 		relais->remaining = 0;
-		dk_set_led(relais_idx, set->on_off);
+		dk_set_led(relais->pinNumber, set->on_off);
 		goto respond;
 	}
 
@@ -128,13 +122,11 @@ static void relais_get(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ct
 static void relais_work(struct k_work *work)
 {
 	struct relais_ctx *relais = CONTAINER_OF(work, struct relais_ctx, work.work);
-	int relais_idx = relais - &relais_ctx[0];//?what is happening here
-	//could be the offset in the array, so on which position this relais_ctx instance is in the array
 
 	if (relais->remaining) {
 		relais_transition_start(relais);
 	} else {
-		dk_set_led(relais_idx, relais->value);
+		dk_set_led(relais->pinNumber, relais->value);
 
 		/* Publish the new value at the end of the transition */
 		struct bt_mesh_onoff_status status;
@@ -178,7 +170,10 @@ static void relais_work(struct k_work *work)
 
 
 
-// health gedöns -----------------------------------------------------
+// =================================================================================================== //
+// =================================================================================================== //
+// ===================================== attention service =========================================== //
+// =================================================================================================== //
 
 /* Set up a repeating delayed work to blink the DK's LEDs when attention is
  * requested.
@@ -224,6 +219,7 @@ static void attention_off(struct bt_mesh_model *mod)
 	attention = false;
 }
 
+// ===================================== health service ============================================== //
 static const struct bt_mesh_health_srv_cb health_srv_cb = {
 	.attn_on = attention_on,
 	.attn_off = attention_off,
@@ -249,7 +245,7 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 static struct bt_mesh_model std_relais_models[] = {
 	BT_MESH_MODEL_CFG_SRV,		//standard configuration server model that every node has in its first element
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	//same applies to the health model: every node has in its first element
-	BT_MESH_MODEL_ONOFF_SRV(&relais_ctx[0].srv),
+	BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
 };
 
 //exp: insert all elements the node consists of
@@ -269,9 +265,8 @@ const struct bt_mesh_comp *model_handler_init(void)
 {
 	k_work_init_delayable(&attention_blink_work, attention_blink);
 
-	for (int i = 0; i < ARRAY_SIZE(relais_ctx); ++i) {
-		k_work_init_delayable(&relais_ctx[i].work, relais_work);
-	}
+	k_work_init_delayable(&myRelais_ctx.work, relais_work);
+
 
 	return &comp;
 }

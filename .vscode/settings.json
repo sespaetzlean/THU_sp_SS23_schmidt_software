@@ -1,6 +1,10 @@
 {
     "cSpell.words": [
         "delayable",
+        "LEDS",
         "relais"
-    ]
+    ],
+    "files.associations": {
+        "lvl_model.h": "c"
+    }
 }

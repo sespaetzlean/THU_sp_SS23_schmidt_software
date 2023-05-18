@@ -217,7 +217,7 @@ build partition_manager_report: phony CMakeFiles/partition_manager_report
 # Custom command for CMakeFiles\boards
 
 build CMakeFiles/boards: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D F:\Github\THU_student_project_SS23_schmidt\Software\aktor_relais\dk_build && D:\ncs\toolchains\v2.3.0\opt\bin\python.exe D:/ncs/v2.3.0/zephyr/scripts/list_boards.py --board-root=f:/Github/THU_student_project_SS23_schmidt/Software/aktor_relais --board-root=D:/ncs/v2.3.0/nrf --board-root=D:/ncs/v2.3.0/zephyr --arch-root=D:/ncs/v2.3.0/zephyr"
+  COMMAND = cmd.exe /C "cd /D F:\Github\THU_student_project_SS23_schmidt\Software\aktor_relais\dk_build && D:\ncs\toolchains\v2.3.0\opt\bin\python.exe D:/ncs/v2.3.0/zephyr/scripts/list_boards.py --board-root=f:/Github/THU_student_project_SS23_schmidt/software/aktor_relais --board-root=D:/ncs/v2.3.0/nrf --board-root=D:/ncs/v2.3.0/zephyr --arch-root=D:/ncs/v2.3.0/zephyr"
   pool = console
 
 

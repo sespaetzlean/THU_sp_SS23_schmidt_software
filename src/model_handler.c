@@ -9,6 +9,11 @@
 #include <dk_buttons_and_leds.h>
 #include "model_handler.h"
 
+#include "lvl_model.h"
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
+
 /// @brief control state of a relais
 /// @param srv server instance	(should include current OnOff-Value)
 /// @param ctx context information for received message, (source, destination, ...)
@@ -149,6 +154,24 @@ static void relais_work(struct k_work *work)
 
 
 
+/// lvl gedöns ----------------------------------------- //
+
+// extern void (* dimmable_set)(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
+// 		    const struct bt_mesh_lvl_set *set,
+// 		    struct bt_mesh_lvl_status *rsp);
+
+// extern void (* dimmable_get)(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
+// 		    struct bt_mesh_lvl_status *rsp);
+//TODO: initialize model
+
+static const struct bt_mesh_lvl_srv_handlers lvl_handlers = {
+	.set = dimmable_set,
+	.get = dimmable_get,
+};
+
+
+static struct dimmable_ctx myDimmable_ctx = { .srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers), .pinNumber = 0 };
+
 
 
 
@@ -245,13 +268,16 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 static struct bt_mesh_model std_relais_models[] = {
 	BT_MESH_MODEL_CFG_SRV,		//standard configuration server model that every node has in its first element
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	//same applies to the health model: every node has in its first element
-	BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
+	//BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
+	BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
+
 };
 
 //exp: insert all elements the node consists of
 //location descriptor is used to number the elements in case there are multiple elements of same kind
 static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(1, std_relais_models, BT_MESH_MODEL_NONE),
+	//BT_MESH_ELEM(2, dimmable_models, BT_MESH_MODEL_NONE),
 };
 
 /// @brief compose the node
@@ -265,7 +291,9 @@ const struct bt_mesh_comp *model_handler_init(void)
 {
 	k_work_init_delayable(&attention_blink_work, attention_blink);
 
-	k_work_init_delayable(&myRelais_ctx.work, relais_work);
+	//k_work_init_delayable(&myRelais_ctx.work, relais_work);
+
+	k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
 
 
 	return &comp;

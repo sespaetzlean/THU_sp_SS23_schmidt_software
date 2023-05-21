@@ -11,17 +11,25 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 
+#include "lc_pwm_output.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define PWM_SIZE_STEP 512		
+//by how much the pwm value should be changed each step 
+//(so changing light always uses this step size that will be called more or less often, 
+//depending how drastically light has to change)
+
 struct dimmable_ctx {
 	struct bt_mesh_lvl_srv srv;	//server instance (should include current OnOff-Value)
 	struct k_work_delayable work;	//what should be done next (will be scheduled), so what should happen with the relais
-	uint32_t remaining;				//remaining time until operation should be executed
-	int16_t value;
-	int16_t target_value;						//target/future value of the relais
-	int pinNumber;
+	uint32_t remaining_time;				//remaining time until operation is finished
+	uint32_t time_period;				//how long to wait in between the steps of size: PWM_SIZE_STEP
+	uint16_t current_lvl;
+	uint16_t target_lvl;						//target/future value of the relais
+	struct pwm_dt_spec *pwm_specs;			//device / pin used for pwm output
 };
 
 /// @brief set state of a dimmable element

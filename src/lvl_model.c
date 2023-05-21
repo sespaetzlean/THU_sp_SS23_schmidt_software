@@ -6,14 +6,43 @@ LOG_MODULE_REGISTER(lvl_model,LOG_LEVEL_DBG);
 
 
 
+
+// ======================================== helper functions =================================//
+
+/// @brief convert a signed int to an unsigned int 
+/// @param inputLevel the signed int
+/// @return the mapped unsigned int
+static uint16_t input_level2bt_level(int16_t inputLevel)
+{
+	return (uint16_t) 32768 + (uint16_t) inputLevel;
+}
+
+/// @brief convert an unsigned int to a signed int 
+/// @param bt_level the unsigned int
+/// @return the mapped signed int
+static int16_t bt_level2input_level(uint16_t bt_level)
+{
+	return (int16_t) bt_level - (int16_t) 32768;
+}
+
+
+
 /// @brief schedules a new level transition
 /// @param dimmable the dimmable stuct instance that should be updated
-static void dimmable_transition_start(struct dimmable_ctx * dimmable)
+static void dimmable_transition_start(const struct bt_mesh_lvl_set *set, struct dimmable_ctx * ctx)
 {
-	LOG_INF("transition in progress. Start level: %d, target level: %d ", dimmable->value, dimmable->target_value);
-	//TODO: smooth transition to program, should reschedul it self all the time until target level is reached
-	k_work_reschedule(&dimmable->work, K_MSEC(dimmable->remaining));	//the work will be scheduled again after the "remaining"-value
-	dimmable->remaining = 0;		//so remaining can be set to 0 now
+	//calculate needed parameters
+	uint32_t step_cnt = abs(set->lvl - ctx->current_lvl) / PWM_SIZE_STEP;		//how many steps (of size PWM_SIZE_STEP) are needed to reach the target value
+	uint32_t time = set->transition ? set->transition->time : 0;				//if 0 or NULL, transition time is 0
+	uint32_t delay = set->transition ? set->transition->delay : 0;				//if 0 or NULL, delay time is 0
+
+	//save parameters in the helper struct dimmable_ctx
+	ctx->target_lvl = set->lvl;
+	ctx->time_period = (step_cnt ? time / step_cnt : 0);
+	ctx->remaining_time = time;
+
+	k_work_reschedule(&ctx->work, K_MSEC(delay));	//work will be started after delay time
+	LOG_INF("Transition started. Delay: %d, Transition: %d, \nStart level: %d, target level: %d ",delay, time, ctx->current_lvl, ctx->target_lvl);
 }
 
 
@@ -22,12 +51,12 @@ static void dimmable_transition_start(struct dimmable_ctx * dimmable)
 /// @brief get the current status and save it in the status parameter
 /// @param dimmable the struct that is used for storing in this file
 /// @param status a status instance the data should be saved to
-static void dimmable_status(const struct dimmable_ctx * dimmable, struct bt_mesh_lvl_status * status)
+static void dimmable_status(const struct dimmable_ctx * d_ctx, struct bt_mesh_lvl_status * status)
 {
-	status->remaining_time = dimmable->remaining ? dimmable->remaining : 
-		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&dimmable->work));
-		status->target = dimmable->target_value;
-		status->current = dimmable->value;
+	status->remaining_time = d_ctx->remaining_time ? d_ctx->remaining_time : 
+		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&d_ctx->work));
+		status->target = d_ctx->target_lvl;
+		status->current = d_ctx->current_lvl;
 }
 
 
@@ -38,33 +67,9 @@ void dimmable_set(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    const struct bt_mesh_lvl_set *set,
 		    struct bt_mesh_lvl_status *rsp)
 {
-	struct dimmable_ctx * dimmable = CONTAINER_OF(srv, struct dimmable_ctx, srv);
+	struct dimmable_ctx * d_ctx = CONTAINER_OF(srv, struct dimmable_ctx, srv);
+	dimmable_transition_start(set, d_ctx);
 
-	//if future value == current value
-	if(set->lvl == dimmable->target_value) {
-		goto respond;
-	}
-
-	dimmable->target_value = set->lvl;
-	if (!bt_mesh_model_transition_time(set->transition)) {
-		//execute instantly if the transition time is set to 0
-		dimmable->remaining = 0;
-		LOG_INF("Target level set immediately to %d", dimmable->target_value);
-		//consequently, current value can be set to target value directly as well
-		dimmable->value = dimmable->target_value;
-		goto respond;
-	}
-	
-	dimmable->remaining = set->transition->time;
-
-	if (set->transition->delay) {
-		LOG_DBG("New updated will be set delayed by: %d", set->transition->delay);
-		k_work_reschedule(&dimmable->work, K_MSEC(set->transition->delay));
-	} else {
-		dimmable_transition_start(dimmable);
-	}
-
-respond:
 	if(rsp) {
 		dimmable_status(dimmable, rsp);
 	}
@@ -88,20 +93,37 @@ void dimmable_get(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 
 void dimmable_work(struct k_work * work)
 {
-	struct dimmable_ctx * dimmable = CONTAINER_OF(work, struct dimmable_ctx, work.work);
+	struct dimmable_ctx *d_ctx = CONTAINER_OF(work, struct dimmable_ctx, work.work);
+	d_ctx->remaining_time -= d_ctx->time_period;	//subtract one time period as one step will be performed now
 
-	if(dimmable->remaining)
+	//check, if transition can be regarded complete
+	//this is the case if remaining time is shorter than one time step 
+	//or when the difference between curren t& target is smaller than one PWM_SIZE_STEP
+	if((d_ctx->remaining_time <= d_ctx->time_period) || (abs(d_ctx->target_lvl - d_ctx->current_lvl) <= PWM_SIZE_STEP))
 	{
-		dimmable_transition_start(dimmable);
-	} else {
-		LOG_INF("New level set via work instantly (due to delay??? (Vermutung)) to %d ", dimmable->target_value);
-		//current value is consequently directly set to target value as well, save like this in struct
-		dimmable->value = dimmable->target_value;
-		//TODO: set led to new value
-
-		//Publish
-		struct bt_mesh_lvl_status status;
-		dimmable_status(dimmable, &status);
-		bt_mesh_lvl_srv_pub(&dimmable->srv, NULL, &status);
+		//update struct
+		d_ctx->current_lvl = d_ctx->target_lvl;
+		d_ctx->remaining_time = 0;
+		//create appropriate status message
+		struct bt_mesh_lvl_status status = {
+			.current = d_ctx->target_lvl,
+			.target = d_ctx->target_lvl,
+		};
+		//and publish the message
+		bt_mesh_lvl_srv_pub(&d_ctx->srv, NULL, &status);
+	} else {	//transition not yet complete
+		if (d_ctx->target_lvl > d_ctx->current_lvl) {
+			//if target value is higher than current value, increase current value by one step
+			d_ctx->current_lvl += PWM_SIZE_STEP;
+		} else {
+			//if target value is lower than current value, decrease current value by one step
+			d_ctx->current_lvl -= PWM_SIZE_STEP;
+		}
+		//reschedule work to be executed again after one time period
+		k_work_reschedule(&d_ctx->work, K_MSEC(d_ctx->time_period));
 	}
+	//set led to new value
+	lc_pwm_output_set(d_ctx->pwm_specs->dev, d_ctx->current_lvl);
+	//log information
+	LOG_DBG("Current light lvl set to: %u/65535\n", d_ctx->current_lvl);
 }

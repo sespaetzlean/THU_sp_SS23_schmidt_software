@@ -6,7 +6,7 @@
 static void relais_transition_start(struct relais_ctx *relais)
 {
 	//exp As long as the transition is in progress, the onoff state shall be "on"
-	dk_set_led(relais->pinNumber, true);
+	relais->relais_output(true);
 	k_work_reschedule(&relais->work, K_MSEC(relais->remaining));	//the work will be scheduled again after the "remaining"-value
 	relais->remaining = 0;		//so remaining can be set to 0 now
 }
@@ -46,7 +46,7 @@ void relais_set(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
 	if (!bt_mesh_model_transition_time(set->transition)) {
 		//execute if the transition time is already 0
 		relais->remaining = 0;
-		dk_set_led(relais->pinNumber, set->on_off);
+		relais->relais_output(set->on_off);
 		goto respond;
 	}
 
@@ -84,7 +84,7 @@ void relais_work(struct k_work *work)
 	if (relais->remaining) {
 		relais_transition_start(relais);
 	} else {
-		dk_set_led(relais->pinNumber, relais->value);
+		relais->relais_output(relais->value);
 
 		/* Publish the new value at the end of the transition */
 		struct bt_mesh_onoff_status status;

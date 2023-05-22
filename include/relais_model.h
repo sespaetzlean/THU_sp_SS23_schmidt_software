@@ -22,7 +22,7 @@ struct relais_ctx {
 	struct k_work_delayable work;	//what should be done next (will be scheduled), so what should happen with the relais
 	uint32_t remaining;				//remaining time until operation should be executed
 	bool value;						//target/future value of the relais
-	int pinNumber;
+	void (*relais_output)(bool onOFF_value);	//function pointer to execute set value
 };
 
 

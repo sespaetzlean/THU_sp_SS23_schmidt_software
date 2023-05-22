@@ -11,7 +11,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 
-#include "lc_pwm_output.h"
+//TODO
+//#include "lc_pwm_output.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +30,8 @@ struct dimmable_ctx {
 	uint32_t time_period;				//how long to wait in between the steps of size: PWM_SIZE_STEP
 	uint16_t current_lvl;
 	uint16_t target_lvl;						//target/future value of the relais
-	struct pwm_dt_spec *pwm_specs;			//device / pin used for pwm output
+	//TODO
+	//const struct pwm_dt_spec *pwm_specs;			//device / pin used for pwm output
 };
 
 /// @brief set state of a dimmable element
@@ -51,6 +53,12 @@ void dimmable_get(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 /// @brief 
 /// @param work 
 void dimmable_work(struct k_work * work);
+
+
+/// @brief initialise the dimmable model, specifically the pwm-pins
+/// @param pwm_dev pins that shall be initialised
+/// @param dev_count number of devices to initialise
+void dimmable_init(const struct device *pwm_dev[], size_t dev_count);
 
 #ifdef __cplusplus
 }

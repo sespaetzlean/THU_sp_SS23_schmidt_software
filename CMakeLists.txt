@@ -11,7 +11,9 @@ project(NONE)
 # NORDIC SDK APP START
 target_sources(app PRIVATE
 	src/main.c
-	src/model_handler.c)
+	src/model_handler.c
+  src/lvl_model.c
+  src/lc_pwm_output.c)
 target_include_directories(app PRIVATE include)
 
 # Preinitialization related to DFU over SMP for nRF52 series

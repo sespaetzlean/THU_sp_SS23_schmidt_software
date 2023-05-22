@@ -15,13 +15,15 @@
 LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
 
 // ============================= pwm definitions ============================= //
-#define PWM_OUT0_NODE	DT_ALIAS(pwm_led0)
+//TODO
+// #define PWM_OUT0_NODE	DT_ALIAS(pwm_led0)
 
-#if DT_NODE_HAS_STATUS(PWM_OUT0_NODE, okay)
-static const struct pwm_dt_spec out0 = PWM_DT_SPEC_GET(PWM_OUT0_NODE);
-#else
-#error "Unsupported board: pwm-out0 devicetree alias is not defined"
-#endif
+// #if DT_NODE_HAS_STATUS(PWM_OUT0_NODE, okay)
+// static const struct pwm_dt_spec out0 = PWM_DT_SPEC_GET(PWM_OUT0_NODE);
+// #else
+// #error "Unsupported board: pwm-out0 devicetree alias is not defined"
+// #endif
+
 
 
 
@@ -181,7 +183,7 @@ static const struct bt_mesh_lvl_srv_handlers lvl_handlers = {
 };
 
 
-static struct dimmable_ctx myDimmable_ctx = { .srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers), .pwm_specs = out0};
+static struct dimmable_ctx myDimmable_ctx = { .srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers)};
 
 
 
@@ -306,7 +308,7 @@ static const struct bt_mesh_comp comp = {
 const struct bt_mesh_comp *model_handler_init(void)
 {
 	//init pwm first
-	lc_pwm_output_init(myDimmable_ctx.pwm_specs->dev);
+	//dimmable_init(list_all_pwm, ARRAY_SIZE(list_all_pwm));
 
 	//add all work_items to scheduler
 	k_work_init_delayable(&attention_blink_work, attention_blink);

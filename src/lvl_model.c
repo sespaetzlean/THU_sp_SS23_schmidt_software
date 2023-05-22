@@ -71,7 +71,7 @@ void dimmable_set(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 	dimmable_transition_start(set, d_ctx);
 
 	if(rsp) {
-		dimmable_status(dimmable, rsp);
+		dimmable_status(d_ctx, rsp);
 	}
 }
 
@@ -123,7 +123,21 @@ void dimmable_work(struct k_work * work)
 		k_work_reschedule(&d_ctx->work, K_MSEC(d_ctx->time_period));
 	}
 	//set led to new value
-	lc_pwm_output_set(d_ctx->pwm_specs->dev, d_ctx->current_lvl);
+	//TODO
+	//lc_pwm_output_set(d_ctx->pwm_specs, d_ctx->current_lvl);
 	//log information
 	LOG_DBG("Current light lvl set to: %u/65535\n", d_ctx->current_lvl);
+}
+
+
+
+void dimmable_init(const struct device *pwm_dev[], size_t dev_count)
+{
+	//TODO
+	// for (size_t i = 0; i < dev_count; i++)
+	// {
+	// 	lc_pwm_output_init(pwm_dev[i]);
+	// }
+	return;
+	
 }

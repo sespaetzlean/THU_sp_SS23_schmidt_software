@@ -41,6 +41,11 @@ static void dimmable_transition_start(const struct bt_mesh_lvl_set *set, struct 
 	ctx->time_period = (step_cnt ? time / step_cnt : 0);
 	ctx->remaining_time = time;
 
+	//to remove app bug that does not update state, also set current_lvl to target_lvl if time & delay is 0
+	//exp: this is because the app does show the current_lvl instead of the target level when delay & time is 0
+	if(!time && !delay)
+		ctx->current_lvl = ctx->target_lvl;
+
 	k_work_reschedule(&ctx->work, K_MSEC(delay));	//work will be started after delay time
 	LOG_INF("Transition started. Delay: %d, Transition: %d, \nStart level: %d, target level: %d ",delay, time, ctx->current_lvl, ctx->target_lvl);
 }
@@ -57,6 +62,7 @@ static void dimmable_status(const struct dimmable_ctx * d_ctx, struct bt_mesh_lv
 		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&d_ctx->work));
 		status->target = d_ctx->target_lvl;
 		status->current = d_ctx->current_lvl;
+	LOG_DBG("Created a status message. time %d, target %d, current %d", status->remaining_time, status->target, status->current);
 }
 
 
@@ -72,6 +78,7 @@ void dimmable_set(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 
 	if(rsp) {
 		dimmable_status(d_ctx, rsp);
+		LOG_DBG("Sent a status update after set");
 	}
 }
 
@@ -111,6 +118,7 @@ void dimmable_work(struct k_work * work)
 		};
 		//and publish the message
 		bt_mesh_lvl_srv_pub(&d_ctx->srv, NULL, &status);
+		LOG_DBG("Transition completed");
 	} else {	//transition not yet complete
 		if (d_ctx->target_lvl > d_ctx->current_lvl) {
 			//if target value is higher than current value, increase current value by one step

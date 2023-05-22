@@ -24,13 +24,14 @@ extern "C" {
 //depending how drastically light has to change)
 
 struct dimmable_ctx {
-	struct bt_mesh_lvl_srv srv;	//server instance (should include current OnOff-Value)
+	struct bt_mesh_lvl_srv srv;		//server instance (should include current OnOff-Value)
 	struct k_work_delayable work;	//what should be done next (will be scheduled), so what should happen with the relais
-	uint32_t remaining_time;				//remaining time until operation is finished
-	uint32_t time_period;				//how long to wait in between the steps of size: PWM_SIZE_STEP
+	uint32_t remaining_time;		//remaining time until operation is finished
+	uint32_t time_period;			//how long to wait in between the steps of size: PWM_SIZE_STEP
 	uint16_t current_lvl;
-	uint16_t target_lvl;						//target/future value of the relais
+	uint16_t target_lvl;			//target/future value of the relais
 	//TODO
+	void (*pwm_output)(uint16_t level);	//function pointer to execute set value
 	//const struct pwm_dt_spec *pwm_specs;			//device / pin used for pwm output
 };
 
@@ -53,12 +54,6 @@ void dimmable_get(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 /// @brief 
 /// @param work 
 void dimmable_work(struct k_work * work);
-
-
-/// @brief initialise the dimmable model, specifically the pwm-pins
-/// @param pwm_dev pins that shall be initialised
-/// @param dev_count number of devices to initialise
-void dimmable_init(const struct device *pwm_dev[], size_t dev_count);
 
 #ifdef __cplusplus
 }

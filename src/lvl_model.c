@@ -131,21 +131,7 @@ void dimmable_work(struct k_work * work)
 		k_work_reschedule(&d_ctx->work, K_MSEC(d_ctx->time_period));
 	}
 	//set led to new value
-	//TODO
-	//lc_pwm_output_set(d_ctx->pwm_specs, d_ctx->current_lvl);
+	d_ctx->pwm_output(d_ctx->current_lvl);
 	//log information
 	LOG_DBG("Current light lvl set to: %u/65535\n", d_ctx->current_lvl);
-}
-
-
-
-void dimmable_init(const struct device *pwm_dev[], size_t dev_count)
-{
-	//TODO
-	// for (size_t i = 0; i < dev_count; i++)
-	// {
-	// 	lc_pwm_output_init(pwm_dev[i]);
-	// }
-	return;
-	
 }

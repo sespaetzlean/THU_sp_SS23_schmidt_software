@@ -25,5 +25,5 @@ void lc_pwm_output_set(const struct pwm_dt_spec *pwm_spec, const uint16_t desire
 		(PWM_PERIOD * desired_lvl) /
 		BT_MESH_LIGHTNESS_MAX;
 
-	pwm_set_dt(&pwm_spec, PWM_USEC(PWM_PERIOD), PWM_USEC(scaled_lvl));
+	pwm_set_dt(pwm_spec, PWM_USEC(PWM_PERIOD), PWM_USEC(scaled_lvl));
 }

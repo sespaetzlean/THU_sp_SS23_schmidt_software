@@ -10,22 +10,32 @@
 #include "model_handler.h"
 
 #include "health_model.h"
-
 #include "relais_model.h"
 #include "lvl_model.h"
+#include"lc_pwm_output.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
 
-// ============================= pwm definitions ============================= //
-//TODO
-// #define PWM_OUT0_NODE	DT_ALIAS(pwm_led0)
 
-// #if DT_NODE_HAS_STATUS(PWM_OUT0_NODE, okay)
-// static const struct pwm_dt_spec out0 = PWM_DT_SPEC_GET(PWM_OUT0_NODE);
-// #else
-// #error "Unsupported board: pwm-out0 devicetree alias is not defined"
-// #endif
+
+// ============================= pwm definitions ============================= //
+#define PWM_OUT0_NODE	DT_ALIAS(pwm_led0)
+
+#if DT_NODE_HAS_STATUS(PWM_OUT0_NODE, okay)
+static const struct pwm_dt_spec out0 = PWM_DT_SPEC_GET(PWM_OUT0_NODE);
+#else
+#error "Unsupported board: pwm-out0 devicetree alias is not defined"
+#endif
+
+/// @brief wrapper function as this definition is needed for the dimmable_ctx struct
+/// @param pwmValue value the led_out shall be set too.
+static void pwmWrapper(uint16_t pwmValue)
+{
+	lc_pwm_output_set(&out0, pwmValue);
+}
+
+
 
 
 
@@ -43,63 +53,16 @@ static struct relais_ctx myRelais_ctx = { .srv = BT_MESH_ONOFF_SRV_INIT(&onoff_h
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 /// lvl gedöns ----------------------------------------- //
-//TODO: initialize model
-
 static const struct bt_mesh_lvl_srv_handlers lvl_handlers = {
 	.set = dimmable_set,
 	.get = dimmable_get,
 };
 
 
-static struct dimmable_ctx myDimmable_ctx = { .srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers)};
+static struct dimmable_ctx myDimmable_ctx = { .srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers), .pwm_output = pwmWrapper};
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// =================================================================================================== //
-// =================================================================================================== //
-// ===================================== attention service =========================================== //
-// =================================================================================================== //
-
-/* Set up a repeating delayed work to blink the DK's LEDs when attention is
- * requested.
- */
 
 
 
@@ -124,15 +87,11 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 
 
-
-
-
-
 static struct bt_mesh_model std_relais_models[] = {
 	BT_MESH_MODEL_CFG_SRV,		//standard configuration server model that every node has in its first element
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	//same applies to the health model: every node has in its first element
-	BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
-	//BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
+	//BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
+	BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
 
 };
 
@@ -152,12 +111,12 @@ static const struct bt_mesh_comp comp = {
 const struct bt_mesh_comp *model_handler_init(void)
 {
 	//init pwm first
-	//dimmable_init(list_all_pwm, ARRAY_SIZE(list_all_pwm));
+	//lc_pwm_output_init(out0.dev);
 
 	//add all work_items to scheduler
 	k_work_init_delayable(&attention_blink_work, attention_blink);
-	k_work_init_delayable(&myRelais_ctx.work, relais_work);
-	//k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
+	//k_work_init_delayable(&myRelais_ctx.work, relais_work);
+	k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
 
 
 	return &comp;

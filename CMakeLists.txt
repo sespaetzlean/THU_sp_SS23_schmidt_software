@@ -12,6 +12,7 @@ project(NONE)
 target_sources(app PRIVATE
 	src/main.c
 	src/model_handler.c
+  src/relais_model.c
   src/lvl_model.c
   src/lc_pwm_output.c)
 target_include_directories(app PRIVATE include)

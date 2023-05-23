@@ -12,6 +12,7 @@
 #include "health_model.h"
 #include "relais_model.h"
 #include "lvl_model.h"
+#include "lightness_model.h"
 #include"lc_pwm_output.h"					//for pwm output
 
 #include <zephyr/logging/log.h>
@@ -66,6 +67,24 @@ static const struct bt_mesh_lvl_srv_handlers lvl_handlers = {
 
 
 static struct dimmable_ctx myDimmable_ctx = { .srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers), .pwm_output = pwm_setWrapper};
+
+
+
+
+
+
+/// lightness gedöns ----------------------------------------- //
+static const struct bt_mesh_lightness_srv_handlers lightness_srv_handlers = {
+	.light_set = light_set,
+	.light_get = light_get,
+};
+
+
+static struct lightness_ctx myLightness_ctx = {
+	//TODO
+	.lightness_srv = BT_MESH_LIGHTNESS_SRV_INIT(&lightness_srv_handlers),
+
+};
 
 
 

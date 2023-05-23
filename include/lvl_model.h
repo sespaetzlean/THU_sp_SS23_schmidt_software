@@ -30,9 +30,7 @@ struct dimmable_ctx {
 	uint32_t time_period;			//how long to wait in between the steps of size: PWM_SIZE_STEP
 	uint16_t current_lvl;
 	uint16_t target_lvl;			//target/future value of the relais
-	//TODO
 	void (*pwm_output)(uint16_t level);	//function pointer to execute set value
-	//const struct pwm_dt_spec *pwm_specs;			//device / pin used for pwm output
 };
 
 /// @brief set state of a dimmable element

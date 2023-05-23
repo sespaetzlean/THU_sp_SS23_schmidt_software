@@ -37,7 +37,7 @@ static void dimmable_transition_start(const struct bt_mesh_lvl_set *set, struct 
 	uint32_t delay = set->transition ? set->transition->delay : 0;				//if 0 or NULL, delay time is 0
 
 	//save parameters in the helper struct dimmable_ctx
-	ctx->target_lvl = set->lvl;
+	ctx->target_lvl = bt_level2input_level(set->lvl);
 	ctx->time_period = (step_cnt ? time / step_cnt : 0);
 	ctx->remaining_time = time;
 
@@ -47,7 +47,7 @@ static void dimmable_transition_start(const struct bt_mesh_lvl_set *set, struct 
 		ctx->current_lvl = ctx->target_lvl;
 
 	k_work_reschedule(&ctx->work, K_MSEC(delay));	//work will be started after delay time
-	LOG_INF("Transition started. Delay: %d, Transition: %d, \nStart level: %d, target level: %d ",delay, time, ctx->current_lvl, ctx->target_lvl);
+	LOG_INF("Transition started. Delay: %d, Transition: %d, Start level(ctx): %d, target level(ctx): %d ",delay, time, ctx->current_lvl, ctx->target_lvl);
 }
 
 
@@ -60,9 +60,9 @@ static void dimmable_status(const struct dimmable_ctx * d_ctx, struct bt_mesh_lv
 {
 	status->remaining_time = d_ctx->remaining_time ? d_ctx->remaining_time : 
 		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&d_ctx->work));
-		status->target = d_ctx->target_lvl;
-		status->current = d_ctx->current_lvl;
-	LOG_DBG("Created a status message. time %d, target %d, current %d", status->remaining_time, status->target, status->current);
+		status->target = input_level2bt_level(d_ctx->target_lvl);
+		status->current = input_level2bt_level(d_ctx->current_lvl);
+	LOG_DBG("Created a status message. time %d, status_target %d, status_current %d", status->remaining_time, status->target, status->current);
 }
 
 
@@ -112,10 +112,8 @@ void dimmable_work(struct k_work * work)
 		d_ctx->current_lvl = d_ctx->target_lvl;
 		d_ctx->remaining_time = 0;
 		//create appropriate status message
-		struct bt_mesh_lvl_status status = {
-			.current = d_ctx->target_lvl,
-			.target = d_ctx->target_lvl,
-		};
+		struct bt_mesh_lvl_status status;
+		dimmable_status(d_ctx, &status);
 		//and publish the message
 		bt_mesh_lvl_srv_pub(&d_ctx->srv, NULL, &status);
 		LOG_DBG("Transition completed");

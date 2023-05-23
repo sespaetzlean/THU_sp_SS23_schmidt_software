@@ -82,8 +82,8 @@ static const struct bt_mesh_lightness_srv_handlers lightness_srv_handlers = {
 
 static struct lightness_ctx myLightness_ctx = {
 	//TODO
-	.lightness_srv = BT_MESH_LIGHTNESS_SRV_INIT(&lightness_srv_handlers),
-
+	.srv = BT_MESH_LIGHTNESS_SRV_INIT(&lightness_srv_handlers),
+	.pwm_output = pwm_setWrapper,
 };
 
 
@@ -115,7 +115,8 @@ static struct bt_mesh_model std_relais_models[] = {
 	BT_MESH_MODEL_CFG_SRV,		//standard configuration server model that every node has in its first element
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	//same applies to the health model: every node has in its first element
 	//BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
-	BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
+	// BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
+	BT_MESH_MODEL_LIGHTNESS_SRV(&myLightness_ctx.srv),
 
 };
 
@@ -140,8 +141,8 @@ const struct bt_mesh_comp *model_handler_init(void)
 	//add all work_items to scheduler
 	k_work_init_delayable(&attention_blink_work, attention_blink);
 	// k_work_init_delayable(&myRelais_ctx.work, relais_work);
-	k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
-
+	// k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
+	k_work_init_delayable(myLightness_ctx.work, lightness_work);
 
 	return &comp;
 }

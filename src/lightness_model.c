@@ -68,7 +68,7 @@ void light_set(struct bt_mesh_lightness_srv *srv,
 
 
 
-void dimmable_get(struct bt_mesh_lightness_srv *srv, struct bt_mesh_msg_ctx *ctx,
+void light_get(struct bt_mesh_lightness_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    struct bt_mesh_lightness_status *rsp)
 {
 	struct lightness_ctx * l_ctx = CONTAINER_OF(srv, struct lightness_ctx, srv);

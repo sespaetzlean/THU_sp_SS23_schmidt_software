@@ -48,7 +48,7 @@ void light_set(struct bt_mesh_lightness_srv *srv,
 /// @param srv lightness server instance
 /// @param ctx context of the message (not used)
 /// @param rsp status response message
-void dimmable_get(struct bt_mesh_lightness_srv *srv, 
+void light_get(struct bt_mesh_lightness_srv *srv, 
                 struct bt_mesh_msg_ctx *ctx,
 		        struct bt_mesh_lightness_status *rsp);
 

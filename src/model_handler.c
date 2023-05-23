@@ -142,7 +142,7 @@ const struct bt_mesh_comp *model_handler_init(void)
 	k_work_init_delayable(&attention_blink_work, attention_blink);
 	// k_work_init_delayable(&myRelais_ctx.work, relais_work);
 	// k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
-	k_work_init_delayable(myLightness_ctx.work, lightness_work);
+	k_work_init_delayable(&myLightness_ctx.work, lightness_work);
 
 	return &comp;
 }

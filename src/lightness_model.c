@@ -16,8 +16,8 @@ static void light_transition_start(const struct bt_mesh_lightness_set *set, stru
 
 	//save parameters in the helper struct lightness_ctx
 	l_ctx->target_lvl = set->lvl;
-	l_ctx->time_per = (step_cnt ? time / step_cnt : 0);
-	l_ctx->rem_time = time;
+	l_ctx->time_period = (step_cnt ? time / step_cnt : 0);
+	l_ctx->remaining_time = time;
 
 	//TODO: check for this bug
 	//to remove app bug that does not update state, also set current_lvl to target_lvl if time & delay is 0
@@ -103,10 +103,10 @@ void lightness_work(struct k_work *work)
 		l_ctx->current_lvl = l_ctx->target_lvl;
 		l_ctx->remaining_time = 0;
 		//create appropriate status message
-		struct bt_mesh_lvl_status status;
-		dimmable_status(l_ctx, &status);
+		struct bt_mesh_lightness_status status;
+		lightness_status(l_ctx, &status);
 		//and publish the message
-		bt_mesh_lvl_srv_pub(&l_ctx->srv, NULL, &status);
+		bt_mesh_lightness_srv_pub(&l_ctx->srv, NULL, &status);
 		LOG_DBG("Transition completed");
 	} else {	//transition not yet complete
 		if (l_ctx->target_lvl > l_ctx->current_lvl) {

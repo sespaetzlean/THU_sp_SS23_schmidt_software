@@ -14,6 +14,7 @@
 #include "lightness_model.h"
 // =====================
 #include "relais_cli_mod.h"
+#include "lvl_cli_mod.h"
 
 #include <dk_buttons_and_leds.h>			//for relais output
 #include"lc_pwm_output.h"					//for pwm output
@@ -45,7 +46,7 @@ static void pwm_setWrapper(uint16_t pwmValue)
 
 
 
-//relais gedöns ============
+// relais gedöns ============
 
 static void relais_setWrapper(bool onOff_value)
 {
@@ -70,7 +71,10 @@ static const struct bt_mesh_lvl_srv_handlers lvl_handlers = {
 };
 
 
-static struct dimmable_ctx myDimmable_ctx = { .srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers), .pwm_output = pwm_setWrapper};
+static struct dimmable_ctx myDimmable_ctx = { 
+	.srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers), 
+	.pwm_output = pwm_setWrapper,
+};
 
 
 
@@ -96,8 +100,20 @@ static struct lightness_ctx myLightness_ctx = {
 
 
 // =========== relais client gedöns ================= //
-static struct button button0 = { .client = BT_MESH_ONOFF_CLI_INIT(&status_handler), .pinNumber = 0};
-struct button * buttons[] = {&button0};
+static struct relais_button button0 = { 
+	.client = BT_MESH_ONOFF_CLI_INIT(&relais_status_handler), 
+	.pinNumber = 0,
+};
+struct relais_button *buttons[1] = {&button0};
+
+
+// =========== level client gedöns ================== //
+static struct level_button button1 = {
+	.client = BT_MESH_LVL_CLI_INIT(&level_status_handler),
+	.pinNumber = 1,
+};
+
+
 
 
 
@@ -134,16 +150,20 @@ static struct bt_mesh_model std_relais_models[] = {
 
 };
 
-// === sensor model === //
-static struct bt_mesh_model std_sensor_models[] = {
+// === sensor models === //
+static struct bt_mesh_model relais_sensor_models[] = {
 	BT_MESH_MODEL_ONOFF_CLI(&button0.client),
+};
+static struct bt_mesh_model level_sensor_models[] = {
+	BT_MESH_MODEL_LVL_CLI(&button1.client),
 };
 
 //exp: insert all elements the node consists of
 //location descriptor is used to number the elements in case there are multiple elements of same kind
 static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(1, std_relais_models, BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(2, std_sensor_models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(2, relais_sensor_models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(3, level_sensor_models, BT_MESH_MODEL_NONE),
 };
 
 /// @brief compose the node

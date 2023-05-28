@@ -62,7 +62,7 @@ void dimmable_get(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 void dimmable_move_set(struct bt_mesh_lvl_srv *srv, 
 			struct bt_mesh_msg_ctx *ctx,
 			const struct bt_mesh_lvl_move_set *move_set,
-			struct bt_mesh_lvl_status *rsp)
+			struct bt_mesh_lvl_status *rsp);
 
 
 /// @brief periodically calls itself until target_lvl is reached

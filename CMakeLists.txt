@@ -11,6 +11,7 @@ project(NONE)
 # NORDIC SDK APP START
 target_sources(app PRIVATE
 	src/main.c
+  src/conversion_helpers.c
 	src/model_handler.c
   src/health_model.c
   src/relais_model.c

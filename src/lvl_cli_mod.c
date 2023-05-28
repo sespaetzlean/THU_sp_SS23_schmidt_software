@@ -10,25 +10,28 @@ LOG_MODULE_REGISTER(level_cli_mod, LOG_LEVEL_DBG);
 static void level_status_writer(struct level_button *button, 
             const struct bt_mesh_lvl_status *status)
 {
-    button->target_lvl = bt_level2input_level(status->target);
+    button->target_level = input_level2bt_level(status->target);
     LOG_DBG("Created status message");
 }
 
 
-void status_handler(struct bt_mesh_lvl_cli *cli,
+
+
+
+void level_status_handler(struct bt_mesh_lvl_cli *cli,
             struct bt_mesh_msg_ctx *ctx,
             const struct bt_mesh_lvl_status *status)
 {
     struct level_button *button = CONTAINER_OF(cli, struct level_button, client);
     level_status_writer(button, status);
-    LOG_DBG("Button %d: Received target %d ", button->target_level);
+    LOG_DBG("Button %d: Received target %d ", button->pinNumber, button->target_level);
 }
 
 
 
 
 
-/// @brief check whether it is a unicast or group adress, send ack or unack command
+/// @brief check whether it is a unicast or group address, send ack or unack command
 /// @param button level_button struct
 /// @param ctx message context
 /// @param set desired level
@@ -58,8 +61,8 @@ static int ack_unack_set_handler(struct level_button *button,
 			 * unacked message. Set the state immediately.
 			 */
             struct bt_mesh_lvl_status artificial_response = {
-                .target = set->lvl;
-            }
+                .target = set->lvl,
+            };
             level_status_writer(button, &artificial_response);
         }
 	}
@@ -73,7 +76,7 @@ static int ack_unack_set_handler(struct level_button *button,
 
 
 
-/// @brief check whether it is a unicast or group adress, send ack or unack command
+/// @brief check whether it is a unicast or group address, send ack or unack command
 /// @param button level_button struct
 /// @param ctx message context
 /// @param set desired move speed
@@ -94,10 +97,10 @@ static int ack_unack_move_handler(struct level_button *button,
 	if (bt_mesh_model_pub_is_unicast(button->client.model)) 
 	{
 		err = bt_mesh_lvl_cli_move_set(&button->client, ctx, set, rsp);
-		LOG_DBG("sent ACK command with level %d", set->lvl);
+		LOG_DBG("sent ACK command with move step %d", set->delta);
 	} else {
 		err = bt_mesh_lvl_cli_move_set_unack(&button->client, ctx, set);
-		LOG_DBG("sent UNack command with level %d", set->lvl);
+		LOG_DBG("sent UNack command with move step %d", set->delta);
         //TODO
         //no artificial response here, level moves anyway
 	}
@@ -111,7 +114,8 @@ static int ack_unack_move_handler(struct level_button *button,
 
 
 
-int set_level(struct button *button, uint16_t level,
+int set_level(struct level_button *button, 
+			uint16_t level,
             struct bt_mesh_model_transition *transition)
 {
     LOG_DBG("Level Set is executed");
@@ -127,11 +131,11 @@ int set_level(struct button *button, uint16_t level,
 
 
 
-int move_level(struct button *button, uint16_t delta_speed)
+int move_level(struct level_button *button, uint16_t delta_speed)
 {
     LOG_DBG("Level move is executed");
     struct bt_mesh_lvl_move_set set = {
-        .delta = delta_speed;
+        .delta = delta_speed,
     };
 
     return ack_unack_move_handler(button, NULL, &set, NULL);

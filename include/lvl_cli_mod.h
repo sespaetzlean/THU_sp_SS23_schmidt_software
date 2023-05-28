@@ -35,7 +35,7 @@ struct level_button {
 /// @param cli 
 /// @param ctx 
 /// @param status 
-void status_handler(struct bt_mesh_lvl_cli *cli,
+void level_status_handler(struct bt_mesh_lvl_cli *cli,
             struct bt_mesh_msg_ctx *ctx,
             const struct bt_mesh_lvl_status *status);
 
@@ -45,7 +45,7 @@ void status_handler(struct bt_mesh_lvl_cli *cli,
 /// @param level
 /// @param transition transition struct to set delay or transition time
 /// @return error code of set message (0 if successful)
-int set_level(struct button *button, uint16_t level,
+int set_level(struct level_button *button, uint16_t level,
             struct bt_mesh_model_transition *transition);
 
 
@@ -53,7 +53,7 @@ int set_level(struct button *button, uint16_t level,
 /// @param button 
 /// @param delta_speed 
 /// @return error code of set message (0 if successful)
-int move_level(struct button *button, uint16_t delta_speed);
+int move_level(struct level_button *button, uint16_t delta_speed);
 
 
 #ifdef __cplusplus

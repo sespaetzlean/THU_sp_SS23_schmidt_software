@@ -16,6 +16,7 @@ target_sources(app PRIVATE
   src/relais_model.c
   src/lvl_model.c
   src/lightness_model.c
+  src/relais_cli_mod.c
   src/lc_pwm_output.c)
 target_include_directories(app PRIVATE include)
 

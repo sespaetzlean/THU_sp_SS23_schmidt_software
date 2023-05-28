@@ -6,13 +6,16 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
-#include <dk_buttons_and_leds.h>			//for relais output
 #include "model_handler.h"
 
 #include "health_model.h"
 #include "relais_model.h"
 #include "lvl_model.h"
 #include "lightness_model.h"
+// =====================
+#include "relais_cli_mod.h"
+
+#include <dk_buttons_and_leds.h>			//for relais output
 #include"lc_pwm_output.h"					//for pwm output
 
 #include <zephyr/logging/log.h>
@@ -90,6 +93,15 @@ static struct lightness_ctx myLightness_ctx = {
 
 
 
+
+// =========== relais client gedöns ================= //
+static struct button button0 = { .client = BT_MESH_ONOFF_CLI_INIT(&status_handler), .pinNumber = 0};
+struct button * buttons[] = {&button0};
+
+
+
+
+
 // ===================================== health service ============================================== //
 extern struct k_work_delayable attention_blink_work;		//is defined in health_model.c
 
@@ -110,20 +122,27 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 
 
-
+// === aktor model === //
 static struct bt_mesh_model std_relais_models[] = {
 	BT_MESH_MODEL_CFG_SRV,		//standard configuration server model that every node has in its first element
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	//same applies to the health model: every node has in its first element
-	//BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
+	//TODO: === Select right model ===
+	BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
 	// BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
-	BT_MESH_MODEL_LIGHTNESS_SRV(&myLightness_ctx.srv),
+	// BT_MESH_MODEL_LIGHTNESS_SRV(&myLightness_ctx.srv),
 
+};
+
+// === sensor model === //
+static struct bt_mesh_model std_sensor_models[] = {
+	BT_MESH_MODEL_ONOFF_CLI(&button0.client),
 };
 
 //exp: insert all elements the node consists of
 //location descriptor is used to number the elements in case there are multiple elements of same kind
 static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(1, std_relais_models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(2, std_sensor_models, BT_MESH_MODEL_NONE),
 };
 
 /// @brief compose the node
@@ -138,11 +157,18 @@ const struct bt_mesh_comp *model_handler_init(void)
 	//init pwm first
 	lc_pwm_output_init(out0.dev);
 
-	//add all work_items to scheduler
+	// === client button callback handlers === //
+	static struct button_handler button_handler = {
+		.cb = button_handler_cb,
+	};
+	dk_button_handler_add(&button_handler);
+
+	// === add all work_items to scheduler === //
 	k_work_init_delayable(&attention_blink_work, attention_blink);
-	// k_work_init_delayable(&myRelais_ctx.work, relais_work);
+	//TODO: === select right model ===
+	k_work_init_delayable(&myRelais_ctx.work, relais_work);
 	// k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
-	k_work_init_delayable(&myLightness_ctx.work, lightness_work);
+	// k_work_init_delayable(&myLightness_ctx.work, lightness_work);
 
 	return &comp;
 }

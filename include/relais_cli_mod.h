@@ -17,9 +17,11 @@
 extern "C" {
 #endif
 
-extern struct button *buttons[1];
 
-struct button {
+extern struct relais_button *buttons[1];
+
+
+struct relais_button {
 	/** Current light status of the corresponding server. */
 	bool status;
 	/** Generic OnOff client instance for this switch. */
@@ -33,9 +35,22 @@ struct button {
 /// @param cli instance of the client
 /// @param ctx message context
 /// @param status status to read from
-void status_handler(struct bt_mesh_onoff_cli *cli,
+void relais_status_handler(struct bt_mesh_onoff_cli *cli,
 			   struct bt_mesh_msg_ctx *ctx,
 			   const struct bt_mesh_onoff_status *status);
+
+
+/// @brief 
+/// @param button 
+/// @return error code of set message (0 if successful)
+int toggle_onoff(struct relais_button *button);
+
+
+/// @brief 
+/// @param button 
+/// @param onOff true = on, false = off 
+/// @return error code of set message (0 if successful)
+int set_onoff(struct relais_button *button, bool onOff);
 
 
 /// @brief this callback will be executed whenever one of the button states is changed

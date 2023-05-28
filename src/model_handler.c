@@ -66,6 +66,7 @@ static struct relais_ctx myRelais_ctx = { .srv = BT_MESH_ONOFF_SRV_INIT(&onoff_h
 static const struct bt_mesh_lvl_srv_handlers lvl_handlers = {
 	.set = dimmable_set,
 	.get = dimmable_get,
+	.delta_set = dimmable_delta_set,
 };
 
 

@@ -31,7 +31,7 @@ struct dimmable_ctx {
 	uint32_t time_period;			//how long to wait in between the steps of size: PWM_SIZE_STEP
 	uint16_t current_lvl;
 	uint16_t target_lvl;			//target/future value of the relais
-	int32_t delta_lvl; 				//how fast the light shall be changed, (step size per ms)
+	int16_t move_step; 				//how fast the light shall be changed, (step size per ms)
 	void (*pwm_output)(uint16_t level);	//function pointer to execute set value
 };
 
@@ -59,9 +59,9 @@ void dimmable_get(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 /// @param ctx context information for received message, (source, destination, ...)
 /// @param delta_set speed of the change (steps / ms)
 /// @param rsp used to store the response
-void dimmable_delta_set(struct bt_mesh_lvl_srv *srv, 
+void dimmable_move_set(struct bt_mesh_lvl_srv *srv, 
 			struct bt_mesh_msg_ctx *ctx,
-			const struct bt_mesh_lvl_delta_set *delta_set,
+			const struct bt_mesh_lvl_move_set *move_set,
 			struct bt_mesh_lvl_status *rsp)
 
 

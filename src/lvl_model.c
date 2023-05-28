@@ -33,15 +33,15 @@ static void dimmable_transition_start(const struct bt_mesh_lvl_set *set, struct 
 
 
 
-/// @brief Schedules a 
+/// @brief Schedules a continuous change of level
 /// @param set 
 /// @param ctx 
-static void dimmable_delta_start(const struct bt_mesh_lvl_delta_set *set, struct dimmable_ctx *ctx)
+static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set, struct dimmable_ctx *ctx)
 {	
-	ctx->delta_lvl = set->delta;
+	ctx->move_step = set->delta;
 	uint32_t step_cnt;
 	//check if to start or stop delta
-	if(0 == ctx->delta_lvl) {
+	if(0 == ctx->move_step) {
 		//stop the work item!
 		k_work_cancel_delayable(&ctx->work);
 		ctx->target_lvl = ctx->current_lvl;
@@ -49,10 +49,10 @@ static void dimmable_delta_start(const struct bt_mesh_lvl_delta_set *set, struct
 		LOG_INF("Delta transition stopped. Current Lvl %d ", ctx->current_lvl);
 		return;
 	}
-	else if(ctx->delta_lvl > 0) {
+	else if(ctx->move_step > 0) {
 		step_cnt = abs(BT_MESH_LVL_MAX - ctx->current_lvl) / PWM_SIZE_STEP;
 		ctx->target_lvl = bt_level2input_level(BT_MESH_LVL_MAX);
-	} else {	//means set_delta < 0
+	} else {	//ctx->move_step < 0
 		step_cnt = abs(BT_MESH_LVL_MIN - ctx->current_lvl) / PWM_SIZE_STEP;
 		ctx->target_lvl = bt_level2input_level(BT_MESH_LVL_MIN);
 	}
@@ -61,14 +61,14 @@ static void dimmable_delta_start(const struct bt_mesh_lvl_delta_set *set, struct
 	/*for delta, not the transition form *set is used, 
 	but the theoretical one is calculated 
 	how long it would take to reach max or min level*/
-	uint32_t time = abs((step_cnt * PWM_SIZE_STEP) / ctx->delta_lvl);			//in ms!
+	uint32_t time = abs((step_cnt * PWM_SIZE_STEP) / ctx->move_step);			//in ms!
 
 	//save parameters in the helper struct dimmable_ctx
 	ctx->time_period = (step_cnt ? time / step_cnt : 0);
 	ctx->remaining_time = time;
 
 	k_work_reschedule(&ctx->work, K_MSEC(delay));
-	LOG_INF("Delta started. Delay: %d, Transition: %d, Start level(ctx): %d, delta level(ctx): %d ",delay, time, ctx->current_lvl, ctx->delta_lvl);
+	LOG_INF("Move started. Delay: %d, Transition: %d, Start level(ctx): %d, move step: %d ",delay, time, ctx->current_lvl, ctx->move_step);
 }
 
 
@@ -118,13 +118,13 @@ void dimmable_get(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 
 
 
-void dimmable_delta_set(struct bt_mesh_lvl_srv *srv,
+void dimmable_move_set(struct bt_mesh_lvl_srv *srv,
 			struct bt_mesh_msg_ctx *ctx,
-			const struct bt_mesh_lvl_delta_set *delta_set,
+			const struct bt_mesh_lvl_move_set *move_set,
 			struct bt_mesh_lvl_status *rsp)
 {
 	struct dimmable_ctx * d_ctx = CONTAINER_OF(srv, struct dimmable_ctx, srv);
-	dimmable_delta_start(delta_set, d_ctx);
+	dimmable_move_start(move_set, d_ctx);
 	if(rsp) {
 		dimmable_status(d_ctx, rsp);
 		LOG_DBG("Sent a status update after delta set");

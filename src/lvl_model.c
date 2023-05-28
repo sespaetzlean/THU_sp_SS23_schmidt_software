@@ -7,26 +7,6 @@ LOG_MODULE_REGISTER(lvl_model,LOG_LEVEL_DBG);
 
 
 
-// ======================================== helper functions =================================//
-
-/// @brief convert a signed int to an unsigned int 
-/// @param inputLevel the signed int
-/// @return the mapped unsigned int
-static uint16_t input_level2bt_level(int16_t inputLevel)
-{
-	return (uint16_t) 32768 + (uint16_t) inputLevel;
-}
-
-/// @brief convert an unsigned int to a signed int 
-/// @param bt_level the unsigned int
-/// @return the mapped signed int
-static int16_t bt_level2input_level(uint16_t bt_level)
-{
-	return (int16_t) bt_level - (int16_t) 32768;
-}
-
-
-
 /// @brief schedules a new level transition
 /// @param dimmable the dimmable stuct instance that should be updated
 static void dimmable_transition_start(const struct bt_mesh_lvl_set *set, struct dimmable_ctx *ctx)

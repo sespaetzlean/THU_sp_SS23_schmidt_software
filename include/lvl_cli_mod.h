@@ -31,6 +31,15 @@ struct level_button {
 };
 
 
+/// @brief for handling the incoming status messages
+/// @param cli 
+/// @param ctx 
+/// @param status 
+void status_handler(struct bt_mesh_lvl_cli *cli,
+            struct bt_mesh_msg_ctx *ctx,
+            const struct bt_mesh_lvl_status *status);
+
+
 /// @brief set a specific level 
 /// @param button 
 /// @param level

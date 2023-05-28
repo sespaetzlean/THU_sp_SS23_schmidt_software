@@ -73,6 +73,12 @@ static int ack_unack_set_handler(struct level_button *button,
 
 
 
+/// @brief check whether it is a unicast or group adress, send ack or unack command
+/// @param button level_button struct
+/// @param ctx message context
+/// @param set desired move speed
+/// @param rsp save response here
+/// @return error code of the set message (0 when successful)
 static int ack_unack_move_handler(struct level_button *button, 
             struct bt_mesh_msg_ctx *ctx, 
             struct bt_mesh_lvl_move_set * set, 

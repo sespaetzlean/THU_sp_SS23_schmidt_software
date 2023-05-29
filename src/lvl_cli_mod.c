@@ -11,7 +11,7 @@ static void level_status_writer(struct level_button *button,
             const struct bt_mesh_lvl_status *status)
 {
     button->target_level = mesh_level2struct_level(status->target);
-    LOG_DBG("Create status msg");
+    LOG_DBG("Create status");
 }
 
 
@@ -24,7 +24,7 @@ void level_status_handler(struct bt_mesh_lvl_cli *cli,
 {
     struct level_button *button = CONTAINER_OF(cli, struct level_button, client);
     level_status_writer(button, status);
-    LOG_DBG("Button: Received target %d ", button->target_level);
+    LOG_DBG("Cli rx target_lvl %d ", button->target_level);
 }
 
 
@@ -52,10 +52,10 @@ static int ack_unack_set_handler(struct level_button *button,
 	if (bt_mesh_model_pub_is_unicast(button->client.model)) 
 	{
 		err = bt_mesh_lvl_cli_set(&button->client, ctx, set, rsp);
-		LOG_DBG("sent ACK command with level %d", set->lvl);
+		LOG_DBG("Cli sent ACK cmd: lvl %d", set->lvl);
 	} else {
 		err = bt_mesh_lvl_cli_set_unack(&button->client, ctx, set);
-		LOG_DBG("sent UNack command with level %d", set->lvl);
+		LOG_DBG("Cli sent UNack cmd: lvl %d", set->lvl);
 		if (!err) {
 			/* There'll be no response status for the
 			 * unacked message. Set the state immediately.
@@ -67,7 +67,7 @@ static int ack_unack_set_handler(struct level_button *button,
         }
 	}
 	if (err) {
-		LOG_WRN("Level setting failed: %d\n", err);
+		LOG_WRN("Lvl setting failed: %d\n", err);
 	}
 	return err;
 }
@@ -97,15 +97,15 @@ static int ack_unack_move_handler(struct level_button *button,
 	if (bt_mesh_model_pub_is_unicast(button->client.model)) 
 	{
 		err = bt_mesh_lvl_cli_move_set(&button->client, ctx, set, rsp);
-		LOG_DBG("sent ACK com: move step %d, pause %d", set->delta, set->transition->time);
+		LOG_DBG("Cli sent ACK cmd: move step %d, pause %d", set->delta, set->transition->time);
 	} else {
 		err = bt_mesh_lvl_cli_move_set_unack(&button->client, ctx, set);
-		LOG_DBG("sent UNack com: move step %d, pause %d", set->delta, set->transition->time);
+		LOG_DBG("Cli sent UNack cmd: move step %d, pause %d", set->delta, set->transition->time);
         //TODO
         //no artificial response here, level moves anyway
 	}
 	if (err) {
-		LOG_WRN("Level moving failed: %d\n", err);
+		LOG_WRN("Lvl moving failed: %d\n", err);
 	}
 	return err;
 }
@@ -118,7 +118,7 @@ int set_level(struct level_button *button,
 			uint16_t level,
             struct bt_mesh_model_transition *transition)
 {
-    LOG_DBG("Level Set is executed");
+    LOG_DBG("SET lvl is executed");
     struct bt_mesh_lvl_set set = {
         .lvl = mesh_level2struct_level(level),
         .transition = transition,
@@ -133,7 +133,7 @@ int set_level(struct level_button *button,
 
 int move_level(struct level_button *button, int16_t delta, uint32_t per_ms)
 {
-    LOG_DBG("Level move is executed");
+    LOG_DBG("MOVE lvl is executed");
 	struct bt_mesh_model_transition tempTransition = {
 		.time = per_ms,
 		.delay = 0,

@@ -7,8 +7,9 @@ LOG_MODULE_REGISTER(lvl_model,LOG_LEVEL_DBG);
 
 
 
-/// @brief schedules a new level transition
-/// @param dimmable the dimmable stuct instance that should be updated
+/// @brief schedules a new SET level transition
+/// @param set the set struct that contains the target level
+/// @param ctx the dimmable stuct instance that should be updated
 static void dimmable_transition_start(const struct bt_mesh_lvl_set *set, struct dimmable_ctx *ctx)
 {
 	//calculate needed parameters
@@ -33,9 +34,9 @@ static void dimmable_transition_start(const struct bt_mesh_lvl_set *set, struct 
 
 
 
-/// @brief Schedules a continuous change of level
-/// @param set 
-/// @param ctx 
+/// @brief Schedules a continuous change of level (MOVE)
+/// @param set the move_set struct that contains moveStepSize and pauseTime/step
+/// @param ctx the dimmable stuct instance that should be updated
 static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set, struct dimmable_ctx *ctx)
 {	
 	ctx->move_step = set->delta;
@@ -75,7 +76,7 @@ static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set, struct d
 
 
 
-/// @brief get the current status and save it in the status parameter
+/// @brief create status msg derived from dimmable_ctx
 /// @param dimmable the struct that is used for storing in this file
 /// @param status a status instance the data should be saved to
 static void dimmable_status(const struct dimmable_ctx * d_ctx, struct bt_mesh_lvl_status * status)

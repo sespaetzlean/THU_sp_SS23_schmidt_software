@@ -113,17 +113,11 @@ int single_device_init(const struct device *pwm_dev);
 void lc_pwm_output_set(const struct pwm_dt_spec *pwm_spec, const uint16_t desired_lvl);
 
 
-/// @brief this callback will be executed whenever one of the button states is changed
-/// @param pressed register that shows which buttons of the GPIO are currently pressed
-/// @param changed register that shows which button states of the GPIO changed 
-void button_handler_cb(uint32_t pressed, uint32_t changed);
 
-/* in init function do
-	static struct button_handler button_handler = {
-		.cb = button_handler_cb,
-	};
-	dk_button_handler_add(&button_handler);
-*/
+int configure_gpi_interrupt(const struct gpio_dt_spec *spec, 
+			gpio_flags_t flags, 
+			struct gpio_callback *callback, 
+			gpio_callback_handler_t handler);
 
 
 #ifdef __cplusplus

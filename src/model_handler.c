@@ -175,8 +175,6 @@ static void sw0_risingEdge_cb(const struct device *port,
 // =========== level client gedöns ================== //
 static struct level_button button1 = {
 	.client = BT_MESH_LVL_CLI_INIT(&level_status_handler),
-	//TODO
-	.pinNumber = 1,
 };
 
 static void sw1_risingEdge_cb(const struct device *port,
@@ -184,7 +182,7 @@ static void sw1_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw1_spec.pin);
-	toggle_onoff(&button0);
+	move_level(&button1, 0);
 }
 
 static void sw2_risingEdge_cb(const struct device *port,
@@ -192,7 +190,7 @@ static void sw2_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw2_spec.pin);
-	toggle_onoff(&button0);
+	move_level(&button1, 1024);
 }
 
 static void sw3_risingEdge_cb(const struct device *port,
@@ -200,7 +198,7 @@ static void sw3_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw3_spec.pin);
-	toggle_onoff(&button0);
+	move_level(&button1, -1024);
 }
 
 
@@ -235,8 +233,8 @@ static struct bt_mesh_model std_relais_models[] = {
 	BT_MESH_MODEL_CFG_SRV,		//standard configuration server model that every node has in its first element
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	//same applies to the health model: every node has in its first element
 	//TODO: === Select right model ===
-	BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
-	// BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
+	//BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
+	BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
 	// BT_MESH_MODEL_LIGHTNESS_SRV(&myLightness_ctx.srv),
 
 };
@@ -274,10 +272,16 @@ const struct bt_mesh_comp *model_handler_init(void)
 	err += gpio_pin_configure_dt(&led1_spec, GPIO_OUTPUT_ACTIVE);	//gpio out pin
 	
 	err += single_device_init(sw0_spec.port);	//gpio in pin
-	err += gpio_pin_configure_dt(&sw0_spec, GPIO_INPUT);	//gpio in pin
-	err += gpio_pin_interrupt_configure_dt(&sw0_spec, GPIO_INT_EDGE_TO_ACTIVE);
-	gpio_init_callback(&sw0_cb_data, sw0_risingEdge_cb, BIT(sw0_spec.pin));
-	err += gpio_add_callback(sw0_spec.port, &sw0_cb_data);
+	err *= configure_gpi_interrupt(&sw0_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw0_cb_data, sw0_risingEdge_cb);
+
+	err += single_device_init(sw1_spec.port);	//gpio in pin
+	err *= configure_gpi_interrupt(&sw1_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw1_cb_data, sw1_risingEdge_cb);
+
+	err += single_device_init(sw2_spec.port);	//gpio in pin
+	err *= configure_gpi_interrupt(&sw2_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw2_cb_data, sw2_risingEdge_cb);
+
+	err += single_device_init(sw3_spec.port);	//gpio in pin
+	err *= configure_gpi_interrupt(&sw3_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw3_cb_data, sw3_risingEdge_cb);
 
 	if (0 != err) {
 		LOG_ERR("Error while initializing IO");
@@ -288,8 +292,8 @@ const struct bt_mesh_comp *model_handler_init(void)
 	// === add all work_items to scheduler === //
 	k_work_init_delayable(&attention_blink_work, attention_blink);
 	//TODO: === select right model ===
-	k_work_init_delayable(&myRelais_ctx.work, relais_work);
-	// k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
+	// k_work_init_delayable(&myRelais_ctx.work, relais_work);
+	k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
 	// k_work_init_delayable(&myLightness_ctx.work, lightness_work);
 
 	return &comp;

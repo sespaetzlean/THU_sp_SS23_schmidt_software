@@ -26,8 +26,6 @@ struct level_button {
     uint16_t target_level;
 	/** Generic OnOff client instance for this switch. */
 	struct bt_mesh_lvl_cli client;
-	/** Number of the pin the button is connected to*/
-	int pinNumber;
 };
 
 
@@ -53,7 +51,7 @@ int set_level(struct level_button *button, uint16_t level,
 /// @param button 
 /// @param delta_speed 
 /// @return error code of set message (0 if successful)
-int move_level(struct level_button *button, uint16_t delta_speed);
+int move_level(struct level_button *button, int16_t delta_speed);
 
 
 #ifdef __cplusplus

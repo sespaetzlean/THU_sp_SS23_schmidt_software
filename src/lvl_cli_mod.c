@@ -24,7 +24,7 @@ void level_status_handler(struct bt_mesh_lvl_cli *cli,
 {
     struct level_button *button = CONTAINER_OF(cli, struct level_button, client);
     level_status_writer(button, status);
-    LOG_DBG("Button %d: Received target %d ", button->pinNumber, button->target_level);
+    LOG_DBG("Button: Received target %d ", button->target_level);
 }
 
 
@@ -131,7 +131,7 @@ int set_level(struct level_button *button,
 
 
 
-int move_level(struct level_button *button, uint16_t delta_speed)
+int move_level(struct level_button *button, int16_t delta_speed)
 {
     LOG_DBG("Level move is executed");
     struct bt_mesh_lvl_move_set set = {

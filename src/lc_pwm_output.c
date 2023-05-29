@@ -35,19 +35,15 @@ void lc_pwm_output_set(const struct pwm_dt_spec *pwm_spec, const uint16_t desire
 }
 
 
-
-
-
-void button_handler_cb(uint32_t pressed, uint32_t changed)
+int configure_gpi_interrupt(const struct gpio_dt_spec *spec, 
+			gpio_flags_t flags, 
+			struct gpio_callback *callback, 
+			gpio_callback_handler_t handler)
 {
-	if (!bt_mesh_is_provisioned()) {
-		return;
-	}
-	//TODO
-	// for (int i = 0; i < ARRAY_SIZE(buttons); ++i) {
-	// 	if (!(pressed & changed & BIT(buttons[i]->pinNumber))) {
-	// 		continue;
-	// 	}
-	// 	toggle_onoff(buttons[i]);
-	// }
+	int err = 0;
+	err += gpio_pin_configure_dt(spec, GPIO_INPUT);	//gpio in pin
+	err += gpio_pin_interrupt_configure_dt(spec, GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_init_callback(callback, handler, BIT(spec->pin));
+	err += gpio_add_callback(spec->port, callback);
+	return err;
 }

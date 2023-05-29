@@ -49,9 +49,10 @@ int set_level(struct level_button *button, uint16_t level,
 
 /// @brief set a specific move speed
 /// @param button 
-/// @param delta_speed 
+/// @param delta size of a step
+/// @param per_ms time to wait between steps
 /// @return error code of set message (0 if successful)
-int move_level(struct level_button *button, int16_t delta_speed);
+int move_level(struct level_button *button, int16_t delta, uint32_t per_ms);
 
 
 #ifdef __cplusplus

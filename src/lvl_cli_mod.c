@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(level_cli_mod, LOG_LEVEL_DBG);
 static void level_status_writer(struct level_button *button, 
             const struct bt_mesh_lvl_status *status)
 {
-    button->target_level = input_level2bt_level(status->target);
+    button->target_level = mesh_level2struct_level(status->target);
     LOG_DBG("Created status message");
 }
 
@@ -120,7 +120,7 @@ int set_level(struct level_button *button,
 {
     LOG_DBG("Level Set is executed");
     struct bt_mesh_lvl_set set = {
-        .lvl = input_level2bt_level(level),
+        .lvl = mesh_level2struct_level(level),
         .transition = transition,
     };
 
@@ -131,11 +131,16 @@ int set_level(struct level_button *button,
 
 
 
-int move_level(struct level_button *button, int16_t delta_speed)
+int move_level(struct level_button *button, int16_t delta, uint32_t per_ms)
 {
     LOG_DBG("Level move is executed");
+	struct bt_mesh_model_transition tempTransition = {
+		.time = per_ms,
+		.delay = 0,
+	};
     struct bt_mesh_lvl_move_set set = {
-        .delta = delta_speed,
+        .delta = delta,
+		.transition = &tempTransition,
     };
 
     return ack_unack_move_handler(button, NULL, &set, NULL);

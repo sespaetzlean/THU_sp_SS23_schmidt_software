@@ -11,7 +11,7 @@ static void level_status_writer(struct level_button *button,
             const struct bt_mesh_lvl_status *status)
 {
     button->target_level = mesh_level2struct_level(status->target);
-    LOG_DBG("Created status message");
+    LOG_DBG("Create status msg");
 }
 
 
@@ -97,10 +97,10 @@ static int ack_unack_move_handler(struct level_button *button,
 	if (bt_mesh_model_pub_is_unicast(button->client.model)) 
 	{
 		err = bt_mesh_lvl_cli_move_set(&button->client, ctx, set, rsp);
-		LOG_DBG("sent ACK command with move step %d", set->delta);
+		LOG_DBG("sent ACK com: move step %d, pause %d", set->delta, set->transition->time);
 	} else {
 		err = bt_mesh_lvl_cli_move_set_unack(&button->client, ctx, set);
-		LOG_DBG("sent UNack command with move step %d", set->delta);
+		LOG_DBG("sent UNack com: move step %d, pause %d", set->delta, set->transition->time);
         //TODO
         //no artificial response here, level moves anyway
 	}

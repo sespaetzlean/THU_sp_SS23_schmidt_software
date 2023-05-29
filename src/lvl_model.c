@@ -39,7 +39,6 @@ static void dimmable_transition_start(const struct bt_mesh_lvl_set *set, struct 
 static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set, struct dimmable_ctx *ctx)
 {	
 	ctx->move_step = set->delta;
-	uint32_t step_cnt = 0;
 	LOG_DBG("Move step: %d", ctx->move_step);
 	//check if to start or stop delta
 	if(0 == ctx->move_step) {
@@ -51,25 +50,23 @@ static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set, struct d
 		return;
 	}	//exp if delta is not 0
 	else if(ctx->move_step > 0) {
-		step_cnt = abs(BT_MESH_LVL_MAX - ctx->current_lvl) / PWM_SIZE_STEP;
-		ctx->target_lvl = struct_level2mesh_level(BT_MESH_LVL_MAX);
+		ctx->target_lvl = UINT16_MAX;
 	} else {	//ctx->move_step < 0
-		step_cnt = abs(BT_MESH_LVL_MIN - ctx->current_lvl) / PWM_SIZE_STEP;
-		ctx->target_lvl = struct_level2mesh_level(BT_MESH_LVL_MIN);
+		ctx->target_lvl = 0;
 	}
-
+	uint32_t step_cnt = abs((int32_t) ctx->target_lvl - ctx->current_lvl) / PWM_SIZE_STEP;
 	uint32_t delay = set->transition ? set->transition->delay : 0;				//if 0 or NULL, delay time is 0
 	/*for delta, not the transition form *set is used, 
 	but the theoretical one is calculated 
 	how long it would take to reach max or min level*/
-	uint32_t time = abs((step_cnt * set->transition->time * PWM_SIZE_STEP) / ctx->move_step);			//in ms!
+	uint32_t time = (step_cnt * set->transition->time * PWM_SIZE_STEP) / abs(ctx->move_step);			//in ms!
 
 	//save parameters in the helper struct dimmable_ctx
 	ctx->time_period = (step_cnt ? time / step_cnt : 0);
 	ctx->remaining_time = time;
 
 	k_work_reschedule(&ctx->work, K_MSEC(delay));
-	LOG_INF("Move started. Delay: %d, Transition: %d, t between steps %d, Start level(ctx): %d, move step: %d ",delay, time, ctx->time_period, ctx->current_lvl, ctx->move_step);
+	LOG_INF("Move started. Delay: %d, Transition: %d, t between steps %d, #steps: %d, Start level(ctx): %d, move step: %d ",delay, time, ctx->time_period, step_cnt, ctx->current_lvl, ctx->move_step);
 }
 
 
@@ -84,7 +81,7 @@ static void dimmable_status(const struct dimmable_ctx * d_ctx, struct bt_mesh_lv
 		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&d_ctx->work));
 		status->target = mesh_level2struct_level(d_ctx->target_lvl);
 		status->current = mesh_level2struct_level(d_ctx->current_lvl);
-	LOG_DBG("Created a status message. time %d, status_target %d, status_current %d", status->remaining_time, status->target, status->current);
+	LOG_DBG("Created status msg. time %d, mesh_target %d, mesh_current %d", status->remaining_time, status->target, status->current);
 }
 
 

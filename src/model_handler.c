@@ -182,7 +182,7 @@ static void sw1_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw1_spec.pin);
-	move_level(&button1, 0);
+	move_level(&button1, 0, 0);
 }
 
 static void sw2_risingEdge_cb(const struct device *port,
@@ -190,7 +190,7 @@ static void sw2_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw2_spec.pin);
-	move_level(&button1, 1024);
+	move_level(&button1, 1024, 100);
 }
 
 static void sw3_risingEdge_cb(const struct device *port,
@@ -198,7 +198,7 @@ static void sw3_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw3_spec.pin);
-	move_level(&button1, -1024);
+	move_level(&button1, -1024, 100);
 }
 
 
@@ -269,7 +269,7 @@ const struct bt_mesh_comp *model_handler_init(void)
 	err += single_device_init(pwm0_spec.dev);	//pwm out pin
 
 	err += single_device_init(led1_spec.port);	//gpio out pin
-	err += gpio_pin_configure_dt(&led1_spec, GPIO_OUTPUT_ACTIVE);	//gpio out pin
+	err += gpio_pin_configure_dt(&led1_spec, GPIO_OUTPUT_INACTIVE);	//gpio out pin
 	
 	err += single_device_init(sw0_spec.port);	//gpio in pin
 	err *= configure_gpi_interrupt(&sw0_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw0_cb_data, sw0_risingEdge_cb);

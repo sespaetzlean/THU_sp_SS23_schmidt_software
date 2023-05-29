@@ -4,10 +4,10 @@
 LOG_MODULE_REGISTER(level_cli_mod, LOG_LEVEL_DBG);
 
 
-/// @brief writes the incoming status message to the level_button struct
+/// @brief helper to read a status message and save to level_button struct
 /// @param button struct to write to
 /// @param status status to read from
-static void level_status_writer(struct level_button *button, 
+static void read_dimmable_status(struct level_button *button, 
             const struct bt_mesh_lvl_status *status)
 {
     button->target_level = mesh_level2struct_level(status->target);
@@ -23,7 +23,7 @@ void level_status_handler(struct bt_mesh_lvl_cli *cli,
             const struct bt_mesh_lvl_status *status)
 {
     struct level_button *button = CONTAINER_OF(cli, struct level_button, client);
-    level_status_writer(button, status);
+    read_dimmable_status(button, status);
     LOG_DBG("Cli rx target_lvl %d ", button->target_level);
 }
 
@@ -63,7 +63,7 @@ static int ack_unack_set_handler(struct level_button *button,
             struct bt_mesh_lvl_status artificial_response = {
                 .target = set->lvl,
             };
-            level_status_writer(button, &artificial_response);
+            read_dimmable_status(button, &artificial_response);
         }
 	}
 	if (err) {

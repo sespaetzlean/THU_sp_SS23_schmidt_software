@@ -7,6 +7,22 @@ LOG_MODULE_REGISTER(lvl_model,LOG_LEVEL_DBG);
 
 
 
+/// @brief helper to create status msg derived from dimmable_ctx
+/// @param dimmable the struct that is used for storing in this file
+/// @param status a status instance the data should be saved to
+static void create_dimmable_status(const struct dimmable_ctx * d_ctx, struct bt_mesh_lvl_status * status)
+{
+	status->remaining_time = d_ctx->remaining_time ? d_ctx->remaining_time : 
+		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&d_ctx->work));
+		status->target = mesh_level2struct_level(d_ctx->target_lvl);
+		status->current = mesh_level2struct_level(d_ctx->current_lvl);
+	LOG_DBG("Created STATUS. time %d, mesh_target %d, mesh_current %d", status->remaining_time, status->target, status->current);
+}
+
+
+
+
+
 /// @brief schedules a new SET level transition
 /// @param set the set struct that contains the target level
 /// @param ctx the dimmable stuct instance that should be updated
@@ -49,7 +65,7 @@ static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set, struct d
 		LOG_INF("MOVE-trans stopped. lvl: %d ", ctx->current_lvl);
 		//publish a srv_msg
 		struct bt_mesh_lvl_status tempStatus;
-		dimmable_status(ctx, &tempStatus);
+		create_dimmable_status(ctx, &tempStatus);
 		bt_mesh_lvl_srv_pub(&ctx->srv, NULL, &tempStatus);
 		return;
 	}	//exp if delta is not 0
@@ -76,21 +92,6 @@ static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set, struct d
 
 
 
-/// @brief create status msg derived from dimmable_ctx
-/// @param dimmable the struct that is used for storing in this file
-/// @param status a status instance the data should be saved to
-static void dimmable_status(const struct dimmable_ctx * d_ctx, struct bt_mesh_lvl_status * status)
-{
-	status->remaining_time = d_ctx->remaining_time ? d_ctx->remaining_time : 
-		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&d_ctx->work));
-		status->target = mesh_level2struct_level(d_ctx->target_lvl);
-		status->current = mesh_level2struct_level(d_ctx->current_lvl);
-	LOG_DBG("Created STATUS. time %d, mesh_target %d, mesh_current %d", status->remaining_time, status->target, status->current);
-}
-
-
-
-
 
 void dimmable_set(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    const struct bt_mesh_lvl_set *set,
@@ -100,7 +101,7 @@ void dimmable_set(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 	dimmable_transition_start(set, d_ctx);
 
 	if(rsp) {
-		dimmable_status(d_ctx, rsp);
+		create_dimmable_status(d_ctx, rsp);
 		LOG_DBG("Sent status after SET");
 	}
 }
@@ -113,7 +114,7 @@ void dimmable_get(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    struct bt_mesh_lvl_status *rsp)
 {
 	struct dimmable_ctx * dimmable = CONTAINER_OF(srv, struct dimmable_ctx, srv);
-	dimmable_status(dimmable, rsp);
+	create_dimmable_status(dimmable, rsp);
 }
 
 
@@ -128,7 +129,7 @@ void dimmable_move_set(struct bt_mesh_lvl_srv *srv,
 	struct dimmable_ctx * d_ctx = CONTAINER_OF(srv, struct dimmable_ctx, srv);
 	dimmable_move_start(move_set, d_ctx);
 	if(rsp) {
-		dimmable_status(d_ctx, rsp);
+		create_dimmable_status(d_ctx, rsp);
 		LOG_DBG("Sent status after MOVE");
 	}
 }
@@ -153,7 +154,7 @@ void dimmable_work(struct k_work * work)
 		d_ctx->remaining_time = 0;
 		//create appropriate status message
 		struct bt_mesh_lvl_status tempStatus;
-		dimmable_status(d_ctx, &tempStatus);
+		create_dimmable_status(d_ctx, &tempStatus);
 		//and publish the message
 		bt_mesh_lvl_srv_pub(&d_ctx->srv, NULL, &tempStatus);
 		LOG_DBG("Trans work completed. NO reschedule!");

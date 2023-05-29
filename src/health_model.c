@@ -1,5 +1,8 @@
 #include "health_model.h"
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(att_mod,LOG_LEVEL_DBG);
+
 
 static bool attention;
 struct k_work_delayable attention_blink_work;
@@ -7,27 +10,11 @@ struct k_work_delayable attention_blink_work;
 
 void attention_blink(struct k_work *work)
 {
-	static int idx;
-	const uint8_t pattern[] = {
-#if DT_NODE_EXISTS(DT_ALIAS(led0))
-		BIT(0),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(led1))
-		BIT(1),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(led2))
-		BIT(2),
-#endif
-#if DT_NODE_EXISTS(DT_ALIAS(led3))
-		BIT(3),
-#endif
-	};
-
 	if (attention) {
-		dk_set_leds(pattern[idx++ % ARRAY_SIZE(pattern)]);
-		k_work_reschedule(&attention_blink_work, K_MSEC(30));
+		LOG_WRN("Attention!");
+		k_work_reschedule(&attention_blink_work, K_MSEC(1000));
 	} else {
-		dk_set_leds(DK_NO_LEDS_MSK);
+		LOG_INF("Attention turned of");
 	}
 }
 

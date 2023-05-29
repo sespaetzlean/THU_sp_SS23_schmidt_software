@@ -13,7 +13,7 @@ void relais_status_handler(struct bt_mesh_onoff_cli *cli,
 {
 	struct relais_button *button = CONTAINER_OF(cli, struct relais_button, client);
 	button->status = status->present_on_off;
-	LOG_DBG("Button %d: Received response: %s\n", button->pinNumber, status->present_on_off ? "on" : "off");
+	LOG_DBG("Button: Received response: %s\n", status->present_on_off ? "on" : "off");
 }
 
 
@@ -22,7 +22,7 @@ void relais_status_handler(struct bt_mesh_onoff_cli *cli,
 
 static int ack_unack_handler(struct relais_button *button, struct bt_mesh_msg_ctx *ctx, struct bt_mesh_onoff_set * set, struct bt_mesh_onoff_status *rsp)
 {
-	int err;
+	int err = 0;
 	/* As we can't know how many nodes are in a group, it doesn't
 	 * make sense to send acknowledged messages to group addresses -
 	 * we won't be able to make use of the responses anyway. (This also
@@ -73,21 +73,4 @@ int set_onoff(struct relais_button *button, bool onOff) {
 		};
 
 	return ack_unack_handler(button, NULL, &set, NULL);
-}
-
-
-
-
-
-void button_handler_cb(uint32_t pressed, uint32_t changed)
-{
-	if (!bt_mesh_is_provisioned()) {
-		return;
-	}
-	for (int i = 0; i < ARRAY_SIZE(buttons); ++i) {
-		if (!(pressed & changed & BIT(buttons[i]->pinNumber))) {
-			continue;
-		}
-		toggle_onoff(buttons[i]);
-	}
 }

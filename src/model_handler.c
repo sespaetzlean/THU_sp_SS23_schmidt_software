@@ -16,29 +16,89 @@
 #include "relais_cli_mod.h"
 #include "lvl_cli_mod.h"
 
-#include <dk_buttons_and_leds.h>			//for relais output
 #include"lc_pwm_output.h"					//for pwm output
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
 
 
-
-// ============================= pwm definitions ============================= //
+// ============================= IO definitions ============================= //
+// === pwm definitions === //
 #define PWM_OUT0_NODE	DT_ALIAS(pwm_led0)
 
 #if DT_NODE_HAS_STATUS(PWM_OUT0_NODE, okay)
-static const struct pwm_dt_spec out0 = PWM_DT_SPEC_GET(PWM_OUT0_NODE);
+static const struct pwm_dt_spec pwm0_spec = PWM_DT_SPEC_GET(PWM_OUT0_NODE);
 #else
 #error "Unsupported board: pwm-out0 devicetree alias is not defined"
 #endif
 
 /// @brief wrapper function as this definition is needed for the dimmable_ctx struct
 /// @param pwmValue value the led_out shall be set too.
-static void pwm_setWrapper(uint16_t pwmValue)
+static void pwm0_setWrapper(uint16_t pwmValue)
 {
-	lc_pwm_output_set(&out0, pwmValue);
+	lc_pwm_output_set(&pwm0_spec, pwmValue);
 }
+
+
+
+// === gpio out definition === //
+#define LED1_NODE    DT_ALIAS(led1)
+
+#if DT_NODE_HAS_STATUS(LED1_NODE, okay)
+static const struct gpio_dt_spec led1_spec = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
+#else
+#error "Unsupported board: led1 devicetree alias is not defined"
+#endif
+
+/// @brief wrapper function as this definition is needed for the relais_ctx struct
+/// @param onOff_value true = on, false = off
+static void led1_setWrapper(const bool onOff_value)
+{
+	if(onOff_value == true)
+		gpio_pin_set_dt(&led1_spec, 1);
+	else
+		gpio_pin_set_dt(&led1_spec, 0);
+}
+
+
+
+// === gpio in definition with interrupt === //
+#define SW0_NODE     DT_ALIAS(sw0)
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+static const struct gpio_dt_spec sw0_spec = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
+#else
+#error "Unsupported board: sw0 devicetree alias is not defined"
+#endif
+static struct gpio_callback sw0_cb_data;
+
+#define SW1_NODE     DT_ALIAS(sw1)
+#if DT_NODE_HAS_STATUS(SW1_NODE, okay)
+static const struct gpio_dt_spec sw1_spec = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
+#else
+#error "Unsupported board: sw1 devicetree alias is not defined"
+#endif
+static struct gpio_callback sw1_cb_data;
+
+#define SW2_NODE     DT_ALIAS(sw2)
+#if DT_NODE_HAS_STATUS(SW2_NODE, okay)
+static const struct gpio_dt_spec sw2_spec = GPIO_DT_SPEC_GET(SW2_NODE, gpios);
+#else
+#error "Unsupported board: sw2 devicetree alias is not defined"
+#endif
+static struct gpio_callback sw2_cb_data;
+
+#define SW3_NODE     DT_ALIAS(sw3)
+#if DT_NODE_HAS_STATUS(SW3_NODE, okay)
+static const struct gpio_dt_spec sw3_spec = GPIO_DT_SPEC_GET(SW3_NODE, gpios);
+#else
+#error "Unsupported board: sw3 devicetree alias is not defined"
+#endif
+static struct gpio_callback sw3_cb_data;
+
+
+
+
+
 
 
 
@@ -47,17 +107,15 @@ static void pwm_setWrapper(uint16_t pwmValue)
 
 
 // relais gedöns ============
-
-static void relais_setWrapper(bool onOff_value)
-{
-	dk_set_led(0, onOff_value);
-}
 static const struct bt_mesh_onoff_srv_handlers onoff_handlers = {
 	.set = relais_set,
 	.get = relais_get,
 };
 
-static struct relais_ctx myRelais_ctx = { .srv = BT_MESH_ONOFF_SRV_INIT(&onoff_handlers), .relais_output = relais_setWrapper};
+static struct relais_ctx myRelais_ctx = { 
+	.srv = BT_MESH_ONOFF_SRV_INIT(&onoff_handlers), 
+	.relais_output = led1_setWrapper
+};
 
 
 
@@ -73,7 +131,7 @@ static const struct bt_mesh_lvl_srv_handlers lvl_handlers = {
 
 static struct dimmable_ctx myDimmable_ctx = { 
 	.srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers), 
-	.pwm_output = pwm_setWrapper,
+	.pwm_output = pwm0_setWrapper,
 };
 
 
@@ -91,7 +149,7 @@ static const struct bt_mesh_lightness_srv_handlers lightness_srv_handlers = {
 static struct lightness_ctx myLightness_ctx = {
 	//TODO
 	.srv = BT_MESH_LIGHTNESS_SRV_INIT(&lightness_srv_handlers),
-	.pwm_output = pwm_setWrapper,
+	.pwm_output = pwm0_setWrapper,
 };
 
 
@@ -102,16 +160,49 @@ static struct lightness_ctx myLightness_ctx = {
 // =========== relais client gedöns ================= //
 static struct relais_button button0 = { 
 	.client = BT_MESH_ONOFF_CLI_INIT(&relais_status_handler), 
-	.pinNumber = 0,
 };
-struct relais_button *buttons[1] = {&button0};
+
+static void sw0_risingEdge_cb(const struct device *port,
+			struct gpio_callback *cb,
+			gpio_port_pins_t pins)
+{
+	LOG_DBG("Callback of %d button rising edge activated", sw0_spec.pin);
+	toggle_onoff(&button0);
+}
+
 
 
 // =========== level client gedöns ================== //
 static struct level_button button1 = {
 	.client = BT_MESH_LVL_CLI_INIT(&level_status_handler),
+	//TODO
 	.pinNumber = 1,
 };
+
+static void sw1_risingEdge_cb(const struct device *port,
+			struct gpio_callback *cb,
+			gpio_port_pins_t pins)
+{
+	LOG_DBG("Callback of %d button rising edge activated", sw1_spec.pin);
+	toggle_onoff(&button0);
+}
+
+static void sw2_risingEdge_cb(const struct device *port,
+			struct gpio_callback *cb,
+			gpio_port_pins_t pins)
+{
+	LOG_DBG("Callback of %d button rising edge activated", sw2_spec.pin);
+	toggle_onoff(&button0);
+}
+
+static void sw3_risingEdge_cb(const struct device *port,
+			struct gpio_callback *cb,
+			gpio_port_pins_t pins)
+{
+	LOG_DBG("Callback of %d button rising edge activated", sw3_spec.pin);
+	toggle_onoff(&button0);
+}
+
 
 
 
@@ -175,14 +266,24 @@ static const struct bt_mesh_comp comp = {
 
 const struct bt_mesh_comp *model_handler_init(void)
 {
-	//init pwm first
-	lc_pwm_output_init(out0.dev);
+	int err = 0;
+	//init IO first
+	err += single_device_init(pwm0_spec.dev);	//pwm out pin
 
-	// === client button callback handlers === //
-	static struct button_handler button_handler = {
-		.cb = button_handler_cb,
-	};
-	dk_button_handler_add(&button_handler);
+	err += single_device_init(led1_spec.port);	//gpio out pin
+	err += gpio_pin_configure_dt(&led1_spec, GPIO_OUTPUT_ACTIVE);	//gpio out pin
+	
+	err += single_device_init(sw0_spec.port);	//gpio in pin
+	err += gpio_pin_configure_dt(&sw0_spec, GPIO_INPUT);	//gpio in pin
+	err += gpio_pin_interrupt_configure_dt(&sw0_spec, GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_init_callback(&sw0_cb_data, sw0_risingEdge_cb, BIT(sw0_spec.pin));
+	err += gpio_add_callback(sw0_spec.port, &sw0_cb_data);
+
+	if (0 != err) {
+		LOG_ERR("Error while initializing IO");
+	} else {
+		LOG_DBG("all IO initialized");
+	}
 
 	// === add all work_items to scheduler === //
 	k_work_init_delayable(&attention_blink_work, attention_blink);

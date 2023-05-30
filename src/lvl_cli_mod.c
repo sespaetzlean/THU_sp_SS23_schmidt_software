@@ -131,12 +131,12 @@ int set_level(struct level_button *button,
 
 
 
-int move_level(struct level_button *button, int16_t delta, uint32_t per_ms)
+int move_level(struct level_button *button, int16_t delta, uint32_t per_ms, uint32_t delay)
 {
     LOG_DBG("MOVE lvl is executed");
 	struct bt_mesh_model_transition tempTransition = {
 		.time = per_ms,
-		.delay = 0,
+		.delay = delay,
 	};
     struct bt_mesh_lvl_move_set set = {
         .delta = delta,

@@ -43,7 +43,8 @@ void level_status_handler(struct bt_mesh_lvl_cli *cli,
 /// @param level
 /// @param transition transition struct to set delay or transition time
 /// @return error code of set message (0 if successful)
-int set_level(struct level_button *button, uint16_t level,
+int set_level(struct level_button *button, 
+            uint16_t level,
             struct bt_mesh_model_transition *transition);
 
 
@@ -52,7 +53,10 @@ int set_level(struct level_button *button, uint16_t level,
 /// @param delta size of a step
 /// @param per_ms time to wait between steps
 /// @return error code of set message (0 if successful)
-int move_level(struct level_button *button, int16_t delta, uint32_t per_ms);
+int move_level(struct level_button *button, int16_t delta, uint32_t per_ms, uint32_t delay);
+
+
+void onOff_dimm_decider(struct level_button *button);
 
 
 #ifdef __cplusplus

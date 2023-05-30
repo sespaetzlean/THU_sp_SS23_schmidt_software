@@ -182,7 +182,7 @@ static void sw1_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw1_spec.pin);
-	move_level(&button1, 0, 0);
+	move_level(&button1, 0, 0, 0);
 }
 
 static void sw2_risingEdge_cb(const struct device *port,
@@ -190,7 +190,7 @@ static void sw2_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw2_spec.pin);
-	move_level(&button1, 1024, 100);
+	move_level(&button1, 1024, 100, 0);
 }
 
 static void sw3_risingEdge_cb(const struct device *port,
@@ -198,7 +198,7 @@ static void sw3_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw3_spec.pin);
-	move_level(&button1, -1024, 100);
+	move_level(&button1, -1024, 100, 0);
 }
 
 

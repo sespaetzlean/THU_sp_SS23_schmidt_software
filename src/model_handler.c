@@ -196,14 +196,15 @@ static void sw2_risingEdge_cb(const struct device *port,
 	onOff_dim_decider_pressed(&decider_data);
 }
 
-static void sw3_risingEdge_cb(const struct device *port,
+static void sw3_fallingEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
-	LOG_DBG("Callback of %d button rising edge activated", sw3_spec.pin);
+	LOG_DBG("Callback of %d button falling edge activated", sw3_spec.pin);
 	// move_level(&button1, -1024, 100, 0);
 	onOff_dim_decider_released(&decider_data);
 }
+
 
 
 
@@ -277,16 +278,16 @@ const struct bt_mesh_comp *model_handler_init(void)
 	err += gpio_pin_configure_dt(&led1_spec, GPIO_OUTPUT_INACTIVE);	//gpio out pin
 	
 	err += single_device_init(sw0_spec.port);	//gpio in pin
-	err *= configure_gpi_interrupt(&sw0_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw0_cb_data, sw0_risingEdge_cb);
+	err += configure_gpi_interrupt(&sw0_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw0_cb_data, sw0_risingEdge_cb);
 
 	err += single_device_init(sw1_spec.port);	//gpio in pin
-	err *= configure_gpi_interrupt(&sw1_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw1_cb_data, sw1_risingEdge_cb);
+	err += configure_gpi_interrupt(&sw1_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw1_cb_data, sw1_risingEdge_cb);
 
 	err += single_device_init(sw2_spec.port);	//gpio in pin
-	err *= configure_gpi_interrupt(&sw2_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw2_cb_data, sw2_risingEdge_cb);
-
+	err += configure_gpi_interrupt(&sw2_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw2_cb_data, sw2_risingEdge_cb);
+	//!!! short P0.15 & P0.16 for this!!!
 	err += single_device_init(sw3_spec.port);	//gpio in pin
-	err *= configure_gpi_interrupt(&sw3_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw3_cb_data, sw3_risingEdge_cb);
+	err += configure_gpi_interrupt(&sw3_spec, GPIO_INT_EDGE_TO_INACTIVE, &sw3_cb_data, sw3_fallingEdge_cb);		
 
 	if (0 != err) {
 		LOG_ERR("Error while initializing IO");

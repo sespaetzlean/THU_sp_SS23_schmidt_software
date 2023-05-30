@@ -173,6 +173,8 @@ static void sw0_risingEdge_cb(const struct device *port,
 
 
 // =========== level client gedöns ================== //
+
+static struct onOff_dim_decider_data decider_data;
 static struct level_button button1 = {
 	.client = BT_MESH_LVL_CLI_INIT(&level_status_handler),
 };
@@ -190,7 +192,8 @@ static void sw2_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw2_spec.pin);
-	move_level(&button1, 1024, 100, 0);
+	// move_level(&button1, 1024, 100, 0);
+	onOff_dim_decider_pressed(&decider_data);
 }
 
 static void sw3_risingEdge_cb(const struct device *port,
@@ -198,8 +201,10 @@ static void sw3_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw3_spec.pin);
-	move_level(&button1, -1024, 100, 0);
+	// move_level(&button1, -1024, 100, 0);
+	onOff_dim_decider_released(&decider_data);
 }
+
 
 
 
@@ -286,8 +291,11 @@ const struct bt_mesh_comp *model_handler_init(void)
 	if (0 != err) {
 		LOG_ERR("Error while initializing IO");
 	} else {
-		LOG_DBG("all IO initialized");
+		LOG_INF("all IO initialized");
 	}
+
+	//init decider stuff
+	onOff_dim_decider_init(&decider_data, &button1);
 
 	// === add all work_items to scheduler === //
 	k_work_init_delayable(&attention_blink_work, attention_blink);

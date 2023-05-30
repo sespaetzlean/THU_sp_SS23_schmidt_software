@@ -45,7 +45,7 @@ void level_status_handler(struct bt_mesh_lvl_cli *cli,
 /// @return error code of set message (0 if successful)
 int set_level(struct level_button *button, 
             uint16_t level,
-            struct bt_mesh_model_transition *transition);
+            const struct bt_mesh_model_transition *transition);
 
 
 /// @brief set a specific move speed
@@ -87,6 +87,8 @@ struct onOff_dim_decider_data {
     bool last_increased;
     /** timestamp needed for calculation how long button was pressed*/
     int64_t timestamp;
+    /** flag to save is pressed or released was last to not execute this twice*/
+    bool last_pressed;
     /**the functions that are needed */
 };
 
@@ -94,7 +96,7 @@ struct onOff_dim_decider_data {
 /// @param data empty struct that shall be used for storing
 /// @param button the client that shall be controlled
 void onOff_dim_decider_init(struct onOff_dim_decider_data *data, 
-            const struct level_button *button);
+            struct level_button *button);
 
 
 /// @brief function that shall be called when the button is pressed

@@ -12,7 +12,7 @@ static void read_dimmable_status(struct level_button *button,
 {
     button->target_lvl = mesh_level2struct_level(status->target);
 	button->current_lvl = mesh_level2struct_level(status->current);
-    LOG_DBG("Read status to client struct");
+    LOG_DBG("Read STATUS 2 cli struct. cur %d, tar %d", button->current_lvl, button->target_lvl);
 }
 
 
@@ -25,7 +25,7 @@ void level_status_handler(struct bt_mesh_lvl_cli *cli,
 {
     struct level_button *button = CONTAINER_OF(cli, struct level_button, client);
     read_dimmable_status(button, status);
-    LOG_DBG("Cli rx target_lvl %d ", button->target_lvl);
+    LOG_DBG("Cli recv STATUS");
 }
 
 
@@ -117,7 +117,7 @@ static int ack_unack_move_handler(struct level_button *button,
 
 int set_level(struct level_button *button, 
 			uint16_t level,
-            struct bt_mesh_model_transition *transition)
+            const struct bt_mesh_model_transition *transition)
 {
     LOG_DBG("SET lvl is executed");
     struct bt_mesh_lvl_set set = {
@@ -153,20 +153,33 @@ int move_level(struct level_button *button, int16_t delta, uint32_t per_ms, uint
 
 //!!!following is dirty implementation as onOff Model is not used!!!
 
-/// @brief helper to decide whether to increase or decrease the level based on the last_increased flag in onOff_dim_decider_data
+/// @brief helper to decide whether to increase or decrease the level 
+/// based on the last_increased flag in onOff_dim_decider_data or client_ctx data respectively
 /// @param data 
 /// @return error code of set message (0 if successful)
 static int inc_dec_lvl_decider(struct onOff_dim_decider_data *data)
 {
+	/** use the toggle if the level is in between,
+	 * if level is max or min, always de- or increase respectively
+	*/
+	int16_t delta;
+	if(0 == data->button->current_lvl) {
+		data->last_increased = false;
+	} else if (UINT16_MAX == data->button->current_lvl) {
+		data->last_increased = true;
+	}
+
 	if(data->last_increased)
 	{
 		//now decrease
 		data->last_increased = false;
-		return move_level(data->button, -1024, 100, 0);
+		delta = -1024;
+	} else {
+		//now increase
+		data->last_increased = true;
+		delta = 1024;
 	}
-	//now increase
-	data->last_increased = true;
-	return move_level(data->button, 1024, 100, 0);
+	return move_level(data->button, delta, 100, 0);
 }
 
 
@@ -180,18 +193,29 @@ static int inc_dec_lvl_decider(struct onOff_dim_decider_data *data)
 static int toggle_lvl_onOff(struct onOff_dim_decider_data *dec_data, 
 			const struct bt_mesh_model_transition *transition)
 {
-	uint16_t lastLevelBuffer = dec_data->last_lvl;
-	if(0 == lastLevelBuffer)
-	{
-		//appliance is currently on
-		dec_data->last_lvl = dec_data->button->target_lvl;
-		LOG_DBG("dirty TOGGLE lvl to 000 is executed");
-	} else {
-		//appliance is currently off
+	/** first check if led is on or off, 
+	 * if on, save this level and turn it off
+	 * if off, turn it on to last saved level
+	 */
+	uint16_t target_lvl;
+	uint16_t currentLevel = dec_data->button->current_lvl;
+	if(0 == currentLevel) {
+		/** it may happen that last saved level is 0
+		 * Then this one should not be used and instead appliance turned on fully
+		 */
+		if(0 == dec_data->last_lvl) {
+			target_lvl = UINT16_MAX;
+		}
+		//turn on to last saved level & del last_lvl (that this one is not used again)
+		target_lvl = dec_data->last_lvl;
 		dec_data->last_lvl = 0;
-		LOG_DBG("dirty TOGGLE lvl to %d is executed", lastLevelBuffer);
+	} else {
+		//turn off
+		dec_data->last_lvl = currentLevel;
+		target_lvl = 0;
 	}
-	return set_level(dec_data->button, lastLevelBuffer, transition);
+	LOG_DBG("dirty TOGGLE lvl to %d is executed", target_lvl);
+	return set_level(dec_data->button, target_lvl, transition);
 }
 
 
@@ -212,8 +236,9 @@ static void onOff_dim_decider_work_handler(struct k_work *work)
 //public functions
 
 void onOff_dim_decider_init(struct onOff_dim_decider_data *data, 
-            const struct level_button *button)
+            struct level_button *button)
 {
+	data->last_pressed = false;
 	data->button = button;
 	data->last_lvl = UINT16_MAX;	//when first toggle is executed, appliance will be set to full level
 	data->last_increased = false;	//shall be increased first
@@ -225,6 +250,10 @@ void onOff_dim_decider_init(struct onOff_dim_decider_data *data,
 
 void onOff_dim_decider_pressed(struct onOff_dim_decider_data *data)
 {
+	if(data->last_pressed) {
+		return;
+	}
+	data->last_pressed = true;
 	//schedule the work item.
 	//dimming shall start after 500 ms
 	k_work_reschedule(&data->dec_work, K_MSEC(TIME_ONOFF_DIM_DECIDE_4_DIM));
@@ -235,6 +264,10 @@ void onOff_dim_decider_pressed(struct onOff_dim_decider_data *data)
 
 void onOff_dim_decider_released(struct onOff_dim_decider_data *data)
 {
+	if(!data->last_pressed) {
+		return;
+	}
+	data->last_pressed = false;
 	/**depending on when the button was pressed:
 	 * before TIME_ONOFF_DIM_DECIDE_4_DIM: toggle on/off
 	 * after TIME_ONOFF_DIM_DECIDE_4_DIM: stop dim up/down

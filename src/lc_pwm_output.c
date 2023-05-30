@@ -42,7 +42,7 @@ int configure_gpi_interrupt(const struct gpio_dt_spec *spec,
 {
 	int err = 0;
 	err += gpio_pin_configure_dt(spec, GPIO_INPUT);	//gpio in pin
-	err += gpio_pin_interrupt_configure_dt(spec, GPIO_INT_EDGE_TO_ACTIVE);
+	err += gpio_pin_interrupt_configure_dt(spec, flags);
 	gpio_init_callback(callback, handler, BIT(spec->pin));
 	err += gpio_add_callback(spec->port, callback);
 	return err;

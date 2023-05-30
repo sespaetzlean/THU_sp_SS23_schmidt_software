@@ -16,7 +16,8 @@ static void create_dimmable_status(const struct dimmable_ctx * d_ctx, struct bt_
 		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&d_ctx->work));
 		status->target = mesh_level2struct_level(d_ctx->target_lvl);
 		status->current = mesh_level2struct_level(d_ctx->current_lvl);
-	LOG_DBG("Created STATUS. time %d, mesh_target %d, mesh_current %d", status->remaining_time, status->target, status->current);
+	// LOG_DBG("Created STATUS. time %d, mesh_target %d, mesh_current %d", status->remaining_time, status->target, status->current);
+	LOG_DBG("created STATUS from dimmable_ctx. rem: %d, cur: %d, tar: %d", status->remaining_time, d_ctx->current_lvl, d_ctx->target_lvl);
 }
 
 
@@ -63,10 +64,6 @@ static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set, struct d
 		ctx->target_lvl = ctx->current_lvl;
 		ctx->remaining_time = 0;
 		LOG_INF("MOVE-trans stopped. lvl: %d ", ctx->current_lvl);
-		//publish a srv_msg
-		struct bt_mesh_lvl_status tempStatus;
-		create_dimmable_status(ctx, &tempStatus);
-		bt_mesh_lvl_srv_pub(&ctx->srv, NULL, &tempStatus);
 		return;
 	}	//exp if delta is not 0
 	else if(ctx->move_step > 0) {
@@ -144,7 +141,7 @@ void dimmable_work(struct k_work * work)
 	struct dimmable_ctx *d_ctx = CONTAINER_OF(work, struct dimmable_ctx, work.work);
 	d_ctx->remaining_time -= d_ctx->time_period;	//subtract one time period as one step will be performed now
 
-	//check, if transition can be regarded complete
+	// * check, if transition can be regarded complete
 	//this is the case if remaining time is shorter than one time step 
 	//or when the difference between curren t& target is smaller than one PWM_SIZE_STEP
 	if((d_ctx->remaining_time <= d_ctx->time_period) || (abs(d_ctx->target_lvl - d_ctx->current_lvl) <= PWM_SIZE_STEP))
@@ -158,7 +155,8 @@ void dimmable_work(struct k_work * work)
 		//and publish the message
 		bt_mesh_lvl_srv_pub(&d_ctx->srv, NULL, &tempStatus);
 		LOG_DBG("Trans work completed. NO reschedule!");
-	} else {	//transition not yet complete
+	} else {	
+	// * transition not yet complete
 		if (d_ctx->target_lvl > d_ctx->current_lvl) {
 			//if target value is higher than current value, increase current value by one step
 			d_ctx->current_lvl += PWM_SIZE_STEP;

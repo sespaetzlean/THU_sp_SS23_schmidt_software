@@ -12,8 +12,6 @@
 #include <bluetooth/mesh/models.h>
 #include "conversion_helpers.h"
 
-//TODO
-//#include "lc_pwm_output.h"
 
 #ifdef __cplusplus
 extern "C" {

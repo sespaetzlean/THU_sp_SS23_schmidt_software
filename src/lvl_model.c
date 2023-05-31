@@ -154,6 +154,7 @@ void dimmable_work(struct k_work * work)
 		create_dimmable_status(d_ctx, &tempStatus);
 		//and publish the message
 		bt_mesh_lvl_srv_pub(&d_ctx->srv, NULL, &tempStatus);
+		LOG_DBG("srv PUB");
 		LOG_DBG("Trans work completed. NO reschedule!");
 	} else {	
 	// * transition not yet complete

@@ -200,17 +200,20 @@ static int toggle_lvl_onOff(struct onOff_dim_decider_data *dec_data,
 	uint16_t target_lvl;
 	uint16_t currentLevel = dec_data->button->current_lvl;
 	if(0 == currentLevel) {
+		LOG_DBG("dirty toggles to ON");
 		/** it may happen that last saved level is 0
 		 * Then this one should not be used and instead appliance turned on fully
 		 */
 		if(0 == dec_data->last_lvl) {
 			target_lvl = UINT16_MAX;
+		} else {
+			//turn on to last saved level & del last_lvl (that this one is not used again)
+			target_lvl = dec_data->last_lvl;
 		}
-		//turn on to last saved level & del last_lvl (that this one is not used again)
-		target_lvl = dec_data->last_lvl;
 		dec_data->last_lvl = 0;
 	} else {
 		//turn off
+		LOG_DBG("dirty toggles to OFF");
 		dec_data->last_lvl = currentLevel;
 		target_lvl = 0;
 	}

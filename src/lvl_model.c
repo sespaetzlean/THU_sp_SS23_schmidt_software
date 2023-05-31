@@ -63,7 +63,7 @@ static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set, struct d
 		k_work_cancel_delayable(&ctx->work);
 		ctx->target_lvl = ctx->current_lvl;
 		ctx->remaining_time = 0;
-		LOG_INF("MOVE-trans stopped. lvl: %d ", ctx->current_lvl);
+		LOG_INF("MOVE-trans STOPPED. lvl: %d ", ctx->current_lvl);
 		return;
 	}	//exp if delta is not 0
 	else if(ctx->move_step > 0) {
@@ -154,8 +154,8 @@ void dimmable_work(struct k_work * work)
 		create_dimmable_status(d_ctx, &tempStatus);
 		//and publish the message
 		bt_mesh_lvl_srv_pub(&d_ctx->srv, NULL, &tempStatus);
-		LOG_DBG("srv PUB");
-		LOG_DBG("Trans work completed. NO reschedule!");
+		LOG_DBG("srv PUB, NO reschedule");
+		LOG_INF("Trans work COMPLETED.");
 	} else {	
 	// * transition not yet complete
 		if (d_ctx->target_lvl > d_ctx->current_lvl) {

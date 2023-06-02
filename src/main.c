@@ -1,30 +1,28 @@
-/*
- * Copyright (c) 2019 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-
-/** @file
- *  @brief Nordic mesh light sample
- */
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
-//#include <bluetooth/mesh/dk_prov.h>
-// #include <dk_buttons_and_leds.h>
 #include "model_handler.h"
 
 
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/drivers/hwinfo.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(MAIN,LOG_LEVEL_DBG);
+
+
+
+
+
+// ================ provisioning model ====================================== //
+/** quick and dirty implementation of a provisioning model. 
+ * This model mainly generates a semi random uuid*/
+
 static uint8_t dev_uuid[16];
 
-/// dirty prov instance. No OOB is supported
 static const struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
 };
 
-//dirty prov init. No OOB is supported
 const struct bt_mesh_prov *bt_mesh_MY_prov_init(void)
 {
 	/* Generate an RFC-4122 version 4 compliant UUID.
@@ -41,41 +39,58 @@ const struct bt_mesh_prov *bt_mesh_MY_prov_init(void)
 }
 
 
+
+
+
+
+
+
+
+
+
+/// @brief function to set up the whole bluetooth mesh stack
+/// @param err error code of the function that calls this function
 static void bt_ready(int err)
 {
 	if (err) {
-		printk("Bluetooth LE-Stack init failed (err %d)\n", err);
+		LOG_ERR("Bluetooth LE-Stack init failed (err %d)\n", err);
 		return;
 	}
 
-	printk("Bluetooth LE-Stack initialized\n");
+	LOG_INF("Bluetooth LE-Stack initialized\n");
 
 
-	err = bt_mesh_init(bt_mesh_MY_prov_init(), model_handler_init());	//model_handler_init has to be defined before!!!
+	err = bt_mesh_init(bt_mesh_MY_prov_init(), model_handler_init());
 	if (err) {
-		printk("Initializing mesh failed (err %d)\n", err);
+		LOG_ERR("Initializing mesh failed (err %d)\n", err);
 		return;
 	}
 
-	//check if device saves provisioning data. If yes, load that data
+	//check if device saved provisioning data before. If yes, load that data
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
 	}
 
-	/* This will be a no-op if settings_load() loaded provisioning info */
+	//exp: This will not be executed if settings_load() loaded provisioning info
 	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
 
-	printk("Mesh initialized\n");
+	LOG_INF("Mesh initialized\n");
 }
 
+
+
+
+
+
+// ============================ MAIN ======================================== //
 void main(void)
 {
 	int err;
 
-	printk("Initializing...\n");
+	LOG_DBG("Initializing...\n");
 
 	err = bt_enable(bt_ready);
 	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
+		LOG_ERR("Bluetooth init failed (err %d)\n", err);
 	}
 }

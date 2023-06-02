@@ -1,10 +1,14 @@
 {
     "cSpell.words": [
         "delayable",
+        "gpios",
+        "hwinfo",
         "LEDS",
-        "relais"
+        "relais",
+        "unack",
+        "unacked"
     ],
-    "files.associations": {
-        "lvl_model.h": "c"
-    }
+    "nrf-connect.applications": [
+        "c:\\Users\\sebas\\Documents\\GitHub\\THU_student_project_SS23_schmidt\\Software\\aktor_relais"
+    ]
 }

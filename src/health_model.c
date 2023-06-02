@@ -43,7 +43,7 @@ void attention_off(struct bt_mesh_model *mod)
 
 int attention_init()
 {
-	int err = single_device_init(&info_led_spec);
+	int err = single_device_init(info_led_spec.port);
 	k_work_init_delayable(&attention_blink_work, attention_blink);
 	return err;
 }

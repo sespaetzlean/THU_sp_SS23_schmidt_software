@@ -1,22 +1,4 @@
-/*
- * Copyright (c) 2019 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-
-#include <zephyr/bluetooth/bluetooth.h>
-#include <bluetooth/mesh/models.h>
 #include "model_handler.h"
-
-#include "health_model.h"
-#include "relais_model.h"
-#include "lvl_model.h"
-#include "lightness_model.h"
-// =====================
-#include "relais_cli_mod.h"
-#include "lvl_cli_mod.h"
-
-#include"lc_pwm_output.h"					//for pwm output
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
@@ -26,13 +8,16 @@ LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
 // === pwm definitions === //
 #define PWM_OUT0_NODE	DT_ALIAS(pwm_led0)
 
+
 #if DT_NODE_HAS_STATUS(PWM_OUT0_NODE, okay)
 static const struct pwm_dt_spec pwm0_spec = PWM_DT_SPEC_GET(PWM_OUT0_NODE);
 #else
 #error "Unsupported board: pwm-out0 devicetree alias is not defined"
 #endif
 
-/// @brief wrapper function as this definition is needed for the dimmable_srv_ctx struct
+
+/// @brief wrapper function as this definition is needed 
+/// for the dimmable_srv_ctx struct
 /// @param pwmValue value the led_out shall be set too.
 static void pwm0_setWrapper(uint16_t pwmValue)
 {
@@ -50,7 +35,9 @@ static const struct gpio_dt_spec led1_spec = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 #error "Unsupported board: led1 devicetree alias is not defined"
 #endif
 
-/// @brief wrapper function as this definition is needed for the relais_srv_ctx struct
+
+/// @brief wrapper function as this definition is needed 
+/// for the relais_srv_ctx struct
 /// @param onOff_value true = on, false = off
 static void led1_setWrapper(const bool onOff_value)
 {
@@ -104,9 +91,7 @@ static struct gpio_callback sw3_cb_data;
 
 
 
-
-
-// relais gedöns ============
+// ===================== relais initializations ==============================//
 static const struct bt_mesh_onoff_srv_handlers onoff_handlers = {
 	.set = relais_set,
 	.get = relais_get,
@@ -121,13 +106,12 @@ static struct relais_srv_ctx myRelais_ctx = {
 
 
 
-/// lvl gedöns ----------------------------------------- //
+// ============ lvl initializations ----------------------------------------- //
 static const struct bt_mesh_lvl_srv_handlers lvl_handlers = {
 	.set = dimmable_set,
 	.get = dimmable_get,
 	.move_set = dimmable_move_set,
 };
-
 
 static struct dimmable_srv_ctx myDimmable_ctx = { 
 	.srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers), 
@@ -138,13 +122,11 @@ static struct dimmable_srv_ctx myDimmable_ctx = {
 
 
 
-
-/// lightness gedöns ----------------------------------------- //
+// ====== lightness initializations ----------------------------------------- //
 static const struct bt_mesh_lightness_srv_handlers lightness_srv_handlers = {
 	.light_set = light_set,
 	.light_get = light_get,
 };
-
 
 static struct lightness_ctx myLightness_ctx = {
 	//TODO
@@ -156,8 +138,7 @@ static struct lightness_ctx myLightness_ctx = {
 
 
 
-
-// =========== relais client gedöns ================= //
+// =========== relais client initializations ================================ //
 static struct relais_cli_ctx button0 = { 
 	.client = BT_MESH_ONOFF_CLI_INIT(&relais_status_handler), 
 };
@@ -172,7 +153,9 @@ static void sw0_risingEdge_cb(const struct device *port,
 
 
 
-// =========== level client gedöns ================== //
+
+
+// ==================== level client initializations ======================== //
 
 static struct onOff_dim_decider_data decider_data;
 static struct dimmable_cli_ctx button1 = {
@@ -187,12 +170,13 @@ static void sw1_risingEdge_cb(const struct device *port,
 	move_level(&button1, 0, 0, 0);
 }
 
+
+// ! for implementation of dim_decider !
 static void sw2_risingEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw2_spec.pin);
-	// move_level(&button1, 1024, 100, 0);
 	onOff_dim_decider_pressed(&decider_data);
 }
 
@@ -201,10 +185,10 @@ static void sw3_fallingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button falling edge activated", sw3_spec.pin);
-	// move_level(&button1, -1024, 100, 0);
 	onOff_dim_decider_released(&decider_data);
 }
 
+// !ending implementation of dim_decider !
 
 
 
@@ -214,8 +198,10 @@ static void sw3_fallingEdge_cb(const struct device *port,
 
 
 
-// ===================================== health service ============================================== //
-extern struct k_work_delayable attention_blink_work;		//is defined in health_model.c
+
+// =================================== health service ======================= //
+//this is defined in health_model.c
+extern struct k_work_delayable attention_blink_work;		
 
 static const struct bt_mesh_health_srv_cb health_srv_cb = {
 	.attn_on = attention_on,
@@ -234,16 +220,24 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 
 
-// === aktor model === //
+
+
+
+// ========================== model definitions ============================= //
+// === actor model === //
 static struct bt_mesh_model std_relais_models[] = {
-	BT_MESH_MODEL_CFG_SRV,		//standard configuration server model that every node has in its first element
-	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	//same applies to the health model: every node has in its first element
+	//standard configuration server model 
+	//that every node has in its first element
+	BT_MESH_MODEL_CFG_SRV,		
+	//same applies to the health model: every node has this in its 1. element
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	
 	//TODO: === Select right model ===
 	//BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
 	BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
 	// BT_MESH_MODEL_LIGHTNESS_SRV(&myLightness_ctx.srv),
 
 };
+
 
 // === sensor models === //
 static struct bt_mesh_model relais_sensor_models[] = {
@@ -253,8 +247,11 @@ static struct bt_mesh_model level_sensor_models[] = {
 	BT_MESH_MODEL_LVL_CLI(&button1.client),
 };
 
+
+
 //exp: insert all elements the node consists of
-//location descriptor is used to number the elements in case there are multiple elements of same kind
+//location descriptor is used to number the elements 
+//in case there are multiple elements of same kind
 static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(1, std_relais_models, BT_MESH_MODEL_NONE),
 	BT_MESH_ELEM(2, relais_sensor_models, BT_MESH_MODEL_NONE),
@@ -263,43 +260,64 @@ static struct bt_mesh_elem elements[] = {
 
 /// @brief compose the node
 static const struct bt_mesh_comp comp = {
-	.cid = CONFIG_BT_COMPANY_ID,	//set id that is defined in the prj.conf-file
+	//set id that is defined in the prj.conf-file
+	.cid = CONFIG_BT_COMPANY_ID,	
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
 };
 
+
+
+
+
 const struct bt_mesh_comp *model_handler_init(void)
 {
 	int err = 0;
+	//init attention
+	err += attention_init();
+
+
 	//init IO first
 	err += single_device_init(pwm0_spec.dev);	//pwm out pin
 
 	err += single_device_init(led1_spec.port);	//gpio out pin
-	err += gpio_pin_configure_dt(&led1_spec, GPIO_OUTPUT_INACTIVE);	//gpio out pin
+	//gpio out pin
+	err += gpio_pin_configure_dt(&led1_spec, GPIO_OUTPUT_INACTIVE);	
 	
 	err += single_device_init(sw0_spec.port);	//gpio in pin
-	err += configure_gpi_interrupt(&sw0_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw0_cb_data, sw0_risingEdge_cb);
+	err += configure_gpi_interrupt(&sw0_spec, 
+		GPIO_INT_EDGE_TO_ACTIVE, 
+		&sw0_cb_data, 
+		sw0_risingEdge_cb);
 
 	err += single_device_init(sw1_spec.port);	//gpio in pin
-	err += configure_gpi_interrupt(&sw1_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw1_cb_data, sw1_risingEdge_cb);
+	err += configure_gpi_interrupt(&sw1_spec, 
+		GPIO_INT_EDGE_TO_ACTIVE, 
+		&sw1_cb_data, 
+		sw1_risingEdge_cb);
 
 	err += single_device_init(sw2_spec.port);	//gpio in pin
-	err += configure_gpi_interrupt(&sw2_spec, GPIO_INT_EDGE_TO_ACTIVE, &sw2_cb_data, sw2_risingEdge_cb);
+	err += configure_gpi_interrupt(&sw2_spec, 
+		GPIO_INT_EDGE_TO_ACTIVE, 
+		&sw2_cb_data, 
+		sw2_risingEdge_cb);
 	//!!! short P0.15 & P0.16 for this!!!
 	err += single_device_init(sw3_spec.port);	//gpio in pin
-	err += configure_gpi_interrupt(&sw3_spec, GPIO_INT_EDGE_TO_INACTIVE, &sw3_cb_data, sw3_fallingEdge_cb);		
+	err += configure_gpi_interrupt(&sw3_spec, 
+		GPIO_INT_EDGE_TO_INACTIVE, 
+		&sw3_cb_data, 
+		sw3_fallingEdge_cb);		
 
 	if (0 != err) {
-		LOG_ERR("Error while initializing IO");
+		LOG_ERR("Error during initialization");
 	} else {
-		LOG_INF("all IO initialized");
+		LOG_INF("all Inits successful");
 	}
 
 	//init decider stuff
 	onOff_dim_decider_init(&decider_data, &button1);
 
 	// === add all work_items to scheduler === //
-	k_work_init_delayable(&attention_blink_work, attention_blink);
 	//TODO: === select right model ===
 	// k_work_init_delayable(&myRelais_ctx.work, relais_work);
 	k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);

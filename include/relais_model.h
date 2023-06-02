@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-struct relais_ctx {
+struct relais_srv_ctx {
 	struct bt_mesh_onoff_srv srv;	//server instance
 	struct k_work_delayable work;
 	uint32_t remaining;				//remaining time until operation is finished

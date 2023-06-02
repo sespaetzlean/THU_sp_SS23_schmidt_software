@@ -50,7 +50,7 @@ static const struct gpio_dt_spec led1_spec = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 #error "Unsupported board: led1 devicetree alias is not defined"
 #endif
 
-/// @brief wrapper function as this definition is needed for the relais_ctx struct
+/// @brief wrapper function as this definition is needed for the relais_srv_ctx struct
 /// @param onOff_value true = on, false = off
 static void led1_setWrapper(const bool onOff_value)
 {
@@ -112,7 +112,7 @@ static const struct bt_mesh_onoff_srv_handlers onoff_handlers = {
 	.get = relais_get,
 };
 
-static struct relais_ctx myRelais_ctx = { 
+static struct relais_srv_ctx myRelais_ctx = { 
 	.srv = BT_MESH_ONOFF_SRV_INIT(&onoff_handlers), 
 	.relais_output = led1_setWrapper
 };
@@ -158,7 +158,7 @@ static struct lightness_ctx myLightness_ctx = {
 
 
 // =========== relais client gedöns ================= //
-static struct relais_button button0 = { 
+static struct relais_cli_ctx button0 = { 
 	.client = BT_MESH_ONOFF_CLI_INIT(&relais_status_handler), 
 };
 

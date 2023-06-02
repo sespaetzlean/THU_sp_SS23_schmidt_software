@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(relais_model,LOG_LEVEL_DBG);
 /// status parameter
 /// @param relais the relais that should be queried
 /// @param status here the current status will be saved
-static void relais_status(const struct relais_ctx *relais, 
+static void relais_status(const struct relais_srv_ctx *relais, 
 			struct bt_mesh_onoff_status *status)
 {
 	/* Do not include delay in the remaining time. */
@@ -25,7 +25,7 @@ static void relais_status(const struct relais_ctx *relais,
 	status->target_on_off = relais->value;
 	/* As long as the transition is in progress, the onoff state is "on": */
 	status->present_on_off = relais->value || status->remaining_time;
-	LOG_DBG("created STATUS from relais_ctx. rem: %d, pres: %d, fut: %d", 
+	LOG_DBG("created STATUS from relais_srv_ctx. rem: %d, pres: %d, fut: %d", 
 		status->remaining_time, 
 		status->present_on_off, 
 		status->target_on_off);
@@ -37,7 +37,7 @@ static void relais_status(const struct relais_ctx *relais,
 
 /// @brief schedules the relais toggle
 /// @param relais the relais that should be toggled
-static void relais_transition_start(struct relais_ctx *relais)
+static void relais_transition_start(struct relais_srv_ctx *relais)
 {
 	//exp As long as the transition is in progress, 
 	//exp the onoff state shall be "on"
@@ -65,7 +65,7 @@ void relais_set(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    const struct bt_mesh_onoff_set *set,
 		    struct bt_mesh_onoff_status *rsp)
 {
-	struct relais_ctx *relais = CONTAINER_OF(srv, struct relais_ctx, srv);
+	struct relais_srv_ctx *relais = CONTAINER_OF(srv, struct relais_srv_ctx, srv);
 
 	//when future value == current value
 	if (set->on_off == relais->value) {
@@ -110,7 +110,7 @@ respond:
 void relais_get(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    struct bt_mesh_onoff_status *rsp)
 {
-	struct relais_ctx *relais = CONTAINER_OF(srv, struct relais_ctx, srv);
+	struct relais_srv_ctx *relais = CONTAINER_OF(srv, struct relais_srv_ctx, srv);
 	relais_status(relais, rsp);
 }
 
@@ -120,8 +120,8 @@ void relais_get(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
 
 void relais_work(struct k_work *work)
 {
-	struct relais_ctx *relais = CONTAINER_OF(
-		work, struct relais_ctx, work.work);
+	struct relais_srv_ctx *relais = CONTAINER_OF(
+		work, struct relais_srv_ctx, work.work);
 
 	if (relais->remaining) {
 		relais_transition_start(relais);

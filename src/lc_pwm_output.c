@@ -25,7 +25,8 @@ int single_device_init(const struct device *dev)
 
 
 
-void lc_pwm_output_set(const struct pwm_dt_spec *pwm_spec, const uint16_t desired_lvl)
+void lc_pwm_output_set(const struct pwm_dt_spec *pwm_spec, 
+			const uint16_t desired_lvl)
 {
 	uint32_t scaled_lvl =
 		(PWM_PERIOD * desired_lvl) /
@@ -41,7 +42,7 @@ int configure_gpi_interrupt(const struct gpio_dt_spec *spec,
 			gpio_callback_handler_t handler)
 {
 	int err = 0;
-	err += gpio_pin_configure_dt(spec, GPIO_INPUT);	//gpio in pin
+	err += gpio_pin_configure_dt(spec, GPIO_INPUT);	//must be gpio in pin
 	err += gpio_pin_interrupt_configure_dt(spec, flags);
 	gpio_init_callback(callback, handler, BIT(spec->pin));
 	err += gpio_add_callback(spec->port, callback);

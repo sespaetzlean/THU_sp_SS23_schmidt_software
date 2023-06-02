@@ -23,7 +23,7 @@ extern "C" {
 //that will be called more or less often, 
 //depending how drastically light has to change)
 
-struct dimmable_ctx {
+struct dimmable_srv_ctx {
 	struct bt_mesh_lvl_srv srv;		//server instance
 	struct k_work_delayable work;
 	//remaining time until operation is finished

@@ -7,17 +7,17 @@ LOG_MODULE_REGISTER(lvl_model,LOG_LEVEL_DBG);
 
 
 
-/// @brief helper to create status msg derived from dimmable_ctx
+/// @brief helper to create status msg derived from dimmable_srv_ctx
 /// @param dimmable the struct that is used for storing in this file
 /// @param status a status instance the data should be saved to
-static void create_dimmable_status(const struct dimmable_ctx * d_ctx, 
+static void create_dimmable_status(const struct dimmable_srv_ctx * d_ctx, 
 			struct bt_mesh_lvl_status * status)
 {
 	status->remaining_time = d_ctx->remaining_time ? d_ctx->remaining_time : 
 		k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&d_ctx->work));
 		status->target = mesh_level2struct_level(d_ctx->target_lvl);
 		status->current = mesh_level2struct_level(d_ctx->current_lvl);
-	LOG_DBG("created STATUS from dimmable_ctx. rem: %d, cur: %d, tar: %d", 
+	LOG_DBG("created STATUS from dimmable_srv_ctx. rem: %d, cur: %d, tar: %d", 
 		status->remaining_time, d_ctx->current_lvl, d_ctx->target_lvl);
 }
 
@@ -29,7 +29,7 @@ static void create_dimmable_status(const struct dimmable_ctx * d_ctx,
 /// @param set the set struct that contains the target level
 /// @param ctx the dimmable stuct instance that should be updated
 static void dimmable_transition_start(const struct bt_mesh_lvl_set *set, 
-			struct dimmable_ctx *ctx)
+			struct dimmable_srv_ctx *ctx)
 {
 	/** calculate needed parameters */
 	//how many steps (of size PWM_SIZE_STEP) are needed to reach target value
@@ -37,7 +37,7 @@ static void dimmable_transition_start(const struct bt_mesh_lvl_set *set,
 	uint32_t time = set->transition ? set->transition->time : 0;				
 	uint32_t delay = set->transition ? set->transition->delay : 0;				
 
-	//save parameters in the helper struct dimmable_ctx
+	//save parameters in the helper struct dimmable_srv_ctx
 	ctx->target_lvl = struct_level2mesh_level(set->lvl);
 	ctx->time_period = (step_cnt ? time / step_cnt : 0);
 	ctx->remaining_time = time;
@@ -63,7 +63,7 @@ static void dimmable_transition_start(const struct bt_mesh_lvl_set *set,
 /// @param set the move_set struct that contains moveStepSize and pauseTime/step
 /// @param ctx the dimmable stuct instance that should be updated
 static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set, 
-			struct dimmable_ctx *ctx)
+			struct dimmable_srv_ctx *ctx)
 {	
 	ctx->move_step = set->delta;
 	//check if to start or stop delta
@@ -90,7 +90,7 @@ static void dimmable_move_start(const struct bt_mesh_lvl_move_set *set,
 		/ abs(ctx->move_step);
 		//in ms!
 
-	//save parameters in the helper struct dimmable_ctx
+	//save parameters in the helper struct dimmable_srv_ctx
 	ctx->time_period = (step_cnt ? time / step_cnt : 0);
 	ctx->remaining_time = time;
 
@@ -113,7 +113,8 @@ void dimmable_set(struct bt_mesh_lvl_srv *srv,
 		    const struct bt_mesh_lvl_set *set,
 		    struct bt_mesh_lvl_status *rsp)
 {
-	struct dimmable_ctx * d_ctx = CONTAINER_OF(srv, struct dimmable_ctx, srv);
+	struct dimmable_srv_ctx * d_ctx = 
+		CONTAINER_OF(srv, struct dimmable_srv_ctx, srv);
 	dimmable_transition_start(set, d_ctx);
 
 	if(rsp) {
@@ -129,8 +130,8 @@ void dimmable_set(struct bt_mesh_lvl_srv *srv,
 void dimmable_get(struct bt_mesh_lvl_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		    struct bt_mesh_lvl_status *rsp)
 {
-	struct dimmable_ctx * dimmable = 
-		CONTAINER_OF(srv, struct dimmable_ctx, srv);
+	struct dimmable_srv_ctx * dimmable = 
+		CONTAINER_OF(srv, struct dimmable_srv_ctx, srv);
 	create_dimmable_status(dimmable, rsp);
 }
 
@@ -143,7 +144,8 @@ void dimmable_move_set(struct bt_mesh_lvl_srv *srv,
 			const struct bt_mesh_lvl_move_set *move_set,
 			struct bt_mesh_lvl_status *rsp)
 {
-	struct dimmable_ctx * d_ctx = CONTAINER_OF(srv, struct dimmable_ctx, srv);
+	struct dimmable_srv_ctx * d_ctx = 
+		CONTAINER_OF(srv, struct dimmable_srv_ctx, srv);
 	dimmable_move_start(move_set, d_ctx);
 	if(rsp) {
 		create_dimmable_status(d_ctx, rsp);
@@ -157,8 +159,8 @@ void dimmable_move_set(struct bt_mesh_lvl_srv *srv,
 
 void dimmable_work(struct k_work * work)
 {
-	struct dimmable_ctx *d_ctx = 
-		CONTAINER_OF(work, struct dimmable_ctx, work.work);
+	struct dimmable_srv_ctx *d_ctx = 
+		CONTAINER_OF(work, struct dimmable_srv_ctx, work.work);
 	//subtract one time period as one step will be performed now
 	d_ctx->remaining_time -= d_ctx->time_period;	
 

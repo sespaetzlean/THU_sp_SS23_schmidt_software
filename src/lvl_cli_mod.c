@@ -4,15 +4,17 @@
 LOG_MODULE_REGISTER(level_cli_mod, LOG_LEVEL_DBG);
 
 
-/// @brief helper to read a status message and save to level_button struct
-/// @param button struct to write to
+/// @brief helper to read a status message and save to dimmable_cli_ctx struct
+/// @param c_ctx struct to write to
 /// @param status status to read from
-static void read_dimmable_status(struct level_button *button, 
+static void read_dimmable_status(struct dimmable_cli_ctx *c_ctx, 
             const struct bt_mesh_lvl_status *status)
 {
-    button->target_lvl = mesh_level2struct_level(status->target);
-	button->current_lvl = mesh_level2struct_level(status->current);
-    LOG_DBG("Read STATUS 2 cli struct. cur %d, tar %d", button->current_lvl, button->target_lvl);
+    c_ctx->target_lvl = mesh_level2struct_level(status->target);
+	c_ctx->current_lvl = mesh_level2struct_level(status->current);
+    LOG_DBG("Read STATUS 2 cli struct. cur %d, tar %d", 
+		c_ctx->current_lvl, 
+		c_ctx->target_lvl);
 }
 
 
@@ -23,8 +25,9 @@ void level_status_handler(struct bt_mesh_lvl_cli *cli,
             struct bt_mesh_msg_ctx *ctx,
             const struct bt_mesh_lvl_status *status)
 {
-    struct level_button *button = CONTAINER_OF(cli, struct level_button, client);
-    read_dimmable_status(button, status);
+    struct dimmable_cli_ctx *c_ctx = 
+		CONTAINER_OF(cli, struct dimmable_cli_ctx, client);
+    read_dimmable_status(c_ctx, status);
     LOG_DBG("Cli recv STATUS");
 }
 
@@ -32,13 +35,14 @@ void level_status_handler(struct bt_mesh_lvl_cli *cli,
 
 
 
-/// @brief check whether it is a unicast or group address, send ack or unack command
-/// @param button level_button struct
+/// @brief check whether it is a unicast or group address, 
+/// send ack or unack command
+/// @param c_ctx dimmable_cli_ctx struct
 /// @param ctx message context
 /// @param set desired level
 /// @param rsp save response here
 /// @return error code of the set message (0 when successful)
-static int ack_unack_set_handler(struct level_button *button, 
+static int ack_unack_set_handler(struct dimmable_cli_ctx *c_ctx, 
             struct bt_mesh_msg_ctx *ctx, 
             struct bt_mesh_lvl_set * set, 
             struct bt_mesh_lvl_status *rsp)
@@ -50,12 +54,12 @@ static int ack_unack_set_handler(struct level_button *button,
 	* applies in LPN mode, since we can't expect to receive a response
 	* in appropriate time).
 	*/
-	if (bt_mesh_model_pub_is_unicast(button->client.model)) 
+	if (bt_mesh_model_pub_is_unicast(c_ctx->client.model)) 
 	{
-		err = bt_mesh_lvl_cli_set(&button->client, ctx, set, rsp);
+		err = bt_mesh_lvl_cli_set(&c_ctx->client, ctx, set, rsp);
 		LOG_DBG("Cli sent ACK cmd: lvl %d", set->lvl);
 	} else {
-		err = bt_mesh_lvl_cli_set_unack(&button->client, ctx, set);
+		err = bt_mesh_lvl_cli_set_unack(&c_ctx->client, ctx, set);
 		LOG_DBG("Cli sent UNack cmd: lvl %d", set->lvl);
 		if (!err) {
 			/* There'll be no response status for the
@@ -64,7 +68,7 @@ static int ack_unack_set_handler(struct level_button *button,
             struct bt_mesh_lvl_status artificial_response = {
                 .target = set->lvl,
             };
-            read_dimmable_status(button, &artificial_response);
+            read_dimmable_status(c_ctx, &artificial_response);
         }
 	}
 	if (err) {
@@ -77,13 +81,14 @@ static int ack_unack_set_handler(struct level_button *button,
 
 
 
-/// @brief check whether it is a unicast or group address, send ack or unack command
-/// @param button level_button struct
+/// @brief check whether it is a unicast or group address, 
+/// send ack or unack command
+/// @param c_ctx dimmable_cli_ctx struct
 /// @param ctx message context
 /// @param set desired move speed
 /// @param rsp save response here
 /// @return error code of the set message (0 when successful)
-static int ack_unack_move_handler(struct level_button *button, 
+static int ack_unack_move_handler(struct dimmable_cli_ctx *c_ctx, 
             struct bt_mesh_msg_ctx *ctx, 
             struct bt_mesh_lvl_move_set * set, 
             struct bt_mesh_lvl_status *rsp)
@@ -95,15 +100,20 @@ static int ack_unack_move_handler(struct level_button *button,
 	* applies in LPN mode, since we can't expect to receive a response
 	* in appropriate time).
 	*/
-	if (bt_mesh_model_pub_is_unicast(button->client.model)) 
+	if (bt_mesh_model_pub_is_unicast(c_ctx->client.model)) 
 	{
-		err = bt_mesh_lvl_cli_move_set(&button->client, ctx, set, rsp);
-		LOG_DBG("Cli sent ACK cmd: move step %d, pause %d", set->delta, set->transition->time);
+		err = bt_mesh_lvl_cli_move_set(&c_ctx->client, ctx, set, rsp);
+		LOG_DBG("Cli sent ACK cmd: move step %d, pause %d", 
+			set->delta, 
+			set->transition->time);
 	} else {
-		err = bt_mesh_lvl_cli_move_set_unack(&button->client, ctx, set);
-		LOG_DBG("Cli sent UNack cmd: move step %d, pause %d", set->delta, set->transition->time);
+		err = bt_mesh_lvl_cli_move_set_unack(&c_ctx->client, ctx, set);
+		LOG_DBG("Cli sent UNack cmd: move step %d, pause %d", 
+			set->delta, 
+			set->transition->time);
         //TODO
-        //no artificial response here, level moves anyway
+        //exp no artificial response here, as level moves anyway
+		//? how to get the actual level of the appliance
 	}
 	if (err) {
 		LOG_WRN("Lvl moving failed: %d\n", err);
@@ -115,7 +125,7 @@ static int ack_unack_move_handler(struct level_button *button,
 
 
 
-int set_level(struct level_button *button, 
+int set_level(struct dimmable_cli_ctx *c_ctx, 
 			uint16_t level,
             const struct bt_mesh_model_transition *transition)
 {
@@ -125,14 +135,17 @@ int set_level(struct level_button *button,
         .transition = transition,
     };
 
-    return ack_unack_set_handler(button, NULL, &set, NULL);
+    return ack_unack_set_handler(c_ctx, NULL, &set, NULL);
 }
 
 
 
 
 
-int move_level(struct level_button *button, int16_t delta, uint32_t per_ms, uint32_t delay)
+int move_level(struct dimmable_cli_ctx *c_ctx, 
+			int16_t delta, 
+			uint32_t per_ms, 
+			uint32_t delay)
 {
     LOG_DBG("MOVE lvl is executed");
 	struct bt_mesh_model_transition tempTransition = {
@@ -144,7 +157,7 @@ int move_level(struct level_button *button, int16_t delta, uint32_t per_ms, uint
 		.transition = &tempTransition,
     };
 
-    return ack_unack_move_handler(button, NULL, &set, NULL);
+    return ack_unack_move_handler(c_ctx, NULL, &set, NULL);
 }
 
 
@@ -154,7 +167,8 @@ int move_level(struct level_button *button, int16_t delta, uint32_t per_ms, uint
 //!!!following is dirty implementation as onOff Model is not used!!!
 
 /// @brief helper to decide whether to increase or decrease the level 
-/// based on the last_increased flag in onOff_dim_decider_data or client_ctx data respectively
+/// based on the last_increased flag in onOff_dim_decider_data 
+/// or client_ctx data respectively
 /// @param data 
 /// @return error code of set message (0 if successful)
 static int inc_dec_lvl_decider(struct onOff_dim_decider_data *data)
@@ -163,9 +177,9 @@ static int inc_dec_lvl_decider(struct onOff_dim_decider_data *data)
 	 * if level is max or min, always de- or increase respectively
 	*/
 	int16_t delta;
-	if(0 == data->button->current_lvl) {
+	if(0 == data->client_ctx->current_lvl) {
 		data->last_increased = false;
-	} else if (UINT16_MAX == data->button->current_lvl) {
+	} else if (UINT16_MAX == data->client_ctx->current_lvl) {
 		data->last_increased = true;
 	}
 
@@ -179,7 +193,7 @@ static int inc_dec_lvl_decider(struct onOff_dim_decider_data *data)
 		data->last_increased = true;
 		delta = 1024;
 	}
-	return move_level(data->button, delta, 100, 0);
+	return move_level(data->client_ctx, delta, 100, 0);
 }
 
 
@@ -187,7 +201,7 @@ static int inc_dec_lvl_decider(struct onOff_dim_decider_data *data)
 
 
 /// @brief toggle the appliance on or off. 
-/// @param button level_button struct
+/// @param c_ctx dimmable_cli_ctx struct
 /// @param transition transition struct to set delay or transition time
 /// @return error code of set message (0 if successful)
 static int toggle_lvl_onOff(struct onOff_dim_decider_data *dec_data, 
@@ -198,16 +212,18 @@ static int toggle_lvl_onOff(struct onOff_dim_decider_data *dec_data,
 	 * if off, turn it on to last saved level
 	 */
 	uint16_t target_lvl;
-	uint16_t currentLevel = dec_data->button->current_lvl;
+	uint16_t currentLevel = dec_data->client_ctx->current_lvl;
 	if(0 == currentLevel) {
 		LOG_DBG("dirty toggles to ON");
 		/** it may happen that last saved level is 0
-		 * Then this one should not be used and instead appliance turned on fully
+		 * Then this one should not be used 
+		 * and instead appliance turned on fully
 		 */
 		if(0 == dec_data->last_lvl) {
 			target_lvl = UINT16_MAX;
 		} else {
-			//turn on to last saved level & del last_lvl (that this one is not used again)
+			//turn on to last saved level 
+			// & del last_lvl (that this one is not used again)
 			target_lvl = dec_data->last_lvl;
 		}
 		dec_data->last_lvl = 0;
@@ -218,7 +234,7 @@ static int toggle_lvl_onOff(struct onOff_dim_decider_data *dec_data,
 		target_lvl = 0;
 	}
 	LOG_DBG("dirty TOGGLE lvl to %d is executed", target_lvl);
-	return set_level(dec_data->button, target_lvl, transition);
+	return set_level(dec_data->client_ctx, target_lvl, transition);
 }
 
 
@@ -228,7 +244,8 @@ static int toggle_lvl_onOff(struct onOff_dim_decider_data *dec_data,
 /// @param work 
 static void onOff_dim_decider_work_handler(struct k_work *work)
 {
-	struct onOff_dim_decider_data *data = CONTAINER_OF(work, struct onOff_dim_decider_data, dec_work);
+	struct onOff_dim_decider_data *data = 
+		CONTAINER_OF(work, struct onOff_dim_decider_data, dec_work);
 	inc_dec_lvl_decider(data);
 }
 
@@ -239,11 +256,12 @@ static void onOff_dim_decider_work_handler(struct k_work *work)
 //public functions
 
 void onOff_dim_decider_init(struct onOff_dim_decider_data *data, 
-            struct level_button *button)
+            struct dimmable_cli_ctx *c_ctx)
 {
 	data->last_pressed = false;
-	data->button = button;
-	data->last_lvl = UINT16_MAX;	//when first toggle is executed, appliance will be set to full level
+	data->client_ctx = c_ctx;
+	//when first toggle is executed, appliance will be set to full level
+	data->last_lvl = UINT16_MAX;	
 	data->last_increased = false;	//shall be increased first
 	//add work to scheduler
 	k_work_init_delayable(&data->dec_work, onOff_dim_decider_work_handler);
@@ -277,7 +295,8 @@ void onOff_dim_decider_released(struct onOff_dim_decider_data *data)
 	 */
 
 	//check when button was pressed
-	int64_t time_pressed = k_uptime_delta(&data->timestamp) + 10;		//+ 10 ms to be sure work did not start yet
+	int64_t time_pressed = k_uptime_delta(&data->timestamp) + 10;		
+	//+ 10 ms to be sure work did not start yet
 	//TODO: remove 0
 	LOG_DBG("Button %d was pressed for %lld ms", 0, time_pressed);
 	if(time_pressed < TIME_ONOFF_DIM_DECIDE_4_DIM) {
@@ -286,7 +305,7 @@ void onOff_dim_decider_released(struct onOff_dim_decider_data *data)
 		toggle_lvl_onOff(data, NULL);
 	} else {
 		//stop moving
-		move_level(data->button, 0, 0, 0);
+		move_level(data->client_ctx, 0, 0, 0);
 		//TODO: check return code
 	}
 }

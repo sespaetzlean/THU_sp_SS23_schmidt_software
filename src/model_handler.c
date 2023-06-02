@@ -32,7 +32,7 @@ static const struct pwm_dt_spec pwm0_spec = PWM_DT_SPEC_GET(PWM_OUT0_NODE);
 #error "Unsupported board: pwm-out0 devicetree alias is not defined"
 #endif
 
-/// @brief wrapper function as this definition is needed for the dimmable_ctx struct
+/// @brief wrapper function as this definition is needed for the dimmable_srv_ctx struct
 /// @param pwmValue value the led_out shall be set too.
 static void pwm0_setWrapper(uint16_t pwmValue)
 {
@@ -129,7 +129,7 @@ static const struct bt_mesh_lvl_srv_handlers lvl_handlers = {
 };
 
 
-static struct dimmable_ctx myDimmable_ctx = { 
+static struct dimmable_srv_ctx myDimmable_ctx = { 
 	.srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers), 
 	.pwm_output = pwm0_setWrapper,
 };
@@ -175,7 +175,7 @@ static void sw0_risingEdge_cb(const struct device *port,
 // =========== level client gedöns ================== //
 
 static struct onOff_dim_decider_data decider_data;
-static struct level_button button1 = {
+static struct dimmable_cli_ctx button1 = {
 	.client = BT_MESH_LVL_CLI_INIT(&level_status_handler),
 };
 

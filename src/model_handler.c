@@ -143,12 +143,39 @@ static struct relais_cli_ctx button0 = {
 	.client = BT_MESH_ONOFF_CLI_INIT(&relais_status_handler), 
 };
 
-static void sw0_risingEdge_cb(const struct device *port,
+/// @brief callback for button0 to toggle an OnOff-Server
+/// @param port 
+/// @param cb 
+/// @param pins 
+static void button0_risingEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %d button rising edge activated", sw0_spec.pin);
 	toggle_onoff(&button0);
+}
+
+/// @brief callback for a switch/lever to turn ON an OnOff-Server
+/// @param port 
+/// @param cb 
+/// @param pins 
+static void lever_risingEdge_cb(const struct device *port,
+			struct gpio_callback *cb,
+			gpio_port_pins_t pins)
+{
+	LOG_DBG("Callback of %d button rising edge activated", sw0_spec.pin);
+	set_onoff(&button0, true);
+}
+/// @brief callback for a switch/lever to turn OFF an OnOff-Server
+/// @param port 
+/// @param cb 
+/// @param pins 
+static void lever_fallingEdge_cb(const struct device *port,
+			struct gpio_callback *cb,
+			gpio_port_pins_t pins)
+{
+	LOG_DBG("Callback of %d button falling edge activated", sw0_spec.pin);
+	set_onoff(&button0, false);
 }
 
 
@@ -288,7 +315,7 @@ const struct bt_mesh_comp *model_handler_init(void)
 	err += configure_gpi_interrupt(&sw0_spec, 
 		GPIO_INT_EDGE_TO_ACTIVE, 
 		&sw0_cb_data, 
-		sw0_risingEdge_cb);
+		button0_risingEdge_cb);
 
 	err += single_device_init(sw1_spec.port);	//gpio in pin
 	err += configure_gpi_interrupt(&sw1_spec, 

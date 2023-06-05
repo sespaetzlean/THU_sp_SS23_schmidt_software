@@ -41,7 +41,7 @@ static const struct gpio_dt_spec led1_spec = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 /// @param onOff_value true = on, false = off
 static void led1_setWrapper(const bool onOff_value)
 {
-	if(onOff_value == true)
+	if(onOff_value)
 		gpio_pin_set_dt(&led1_spec, 1);
 	else
 		gpio_pin_set_dt(&led1_spec, 0);
@@ -139,11 +139,11 @@ static struct lightness_ctx myLightness_ctx = {
 
 
 // =========== relais client initializations ================================ //
-static struct relais_cli_ctx button0 = { 
+static struct relais_cli_ctx relais0_ctr = { 
 	.client = BT_MESH_ONOFF_CLI_INIT(&relais_status_handler), 
 };
 
-/// @brief callback for button0 to toggle an OnOff-Server
+/// @brief callback for relais0_ctr to toggle an OnOff-Server
 /// @param port 
 /// @param cb 
 /// @param pins 
@@ -152,7 +152,7 @@ static void button0_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %s button rising edge activated", port->name);
-	toggle_onoff(&button0);
+	toggle_onoff(&relais0_ctr);
 }
 
 /// @brief callback for a switch/lever to turn ON an OnOff-Server
@@ -164,7 +164,7 @@ static void lever_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %s rising edge activated", port->name);
-	set_onoff(&button0, true);
+	set_onoff(&relais0_ctr, true);
 }
 /// @brief callback for a switch/lever to turn OFF an OnOff-Server
 /// @param port 
@@ -175,7 +175,7 @@ static void lever_fallingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %s button falling edge activated", port->name);
-	set_onoff(&button0, false);
+	set_onoff(&relais0_ctr, false);
 }
 
 
@@ -185,7 +185,7 @@ static void lever_fallingEdge_cb(const struct device *port,
 // ==================== level client initializations ======================== //
 
 static struct onOff_dim_decider_data decider_data;
-static struct dimmable_cli_ctx button1 = {
+static struct dimmable_cli_ctx level0_ctr = {
 	.client = BT_MESH_LVL_CLI_INIT(&level_status_handler),
 };
 
@@ -194,7 +194,7 @@ static void sw1_risingEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %s button rising edge activated", port->name);
-	move_level(&button1, 0, 0, 0);
+	move_level(&level0_ctr, 0, 0, 0);
 }
 
 
@@ -268,10 +268,10 @@ static struct bt_mesh_model std_relais_models[] = {
 
 // === sensor models === //
 static struct bt_mesh_model relais_sensor_models[] = {
-	BT_MESH_MODEL_ONOFF_CLI(&button0.client),
+	BT_MESH_MODEL_ONOFF_CLI(&relais0_ctr.client),
 };
 static struct bt_mesh_model level_sensor_models[] = {
-	BT_MESH_MODEL_LVL_CLI(&button1.client),
+	BT_MESH_MODEL_LVL_CLI(&level0_ctr.client),
 };
 
 
@@ -342,7 +342,7 @@ const struct bt_mesh_comp *model_handler_init(void)
 	}
 
 	//init decider stuff
-	onOff_dim_decider_init(&decider_data, &button1);
+	onOff_dim_decider_init(&decider_data, &level0_ctr);
 
 	// === add all work_items to scheduler === //
 	//TODO: === select right model ===

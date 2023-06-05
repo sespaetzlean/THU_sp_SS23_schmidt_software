@@ -151,7 +151,7 @@ static void button0_risingEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
-	LOG_DBG("Callback of %d button rising edge activated", sw0_spec.pin);
+	LOG_DBG("Callback of %s button rising edge activated", port->name);
 	toggle_onoff(&button0);
 }
 
@@ -163,7 +163,7 @@ static void lever_risingEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
-	LOG_DBG("Callback of %d button rising edge activated", sw0_spec.pin);
+	LOG_DBG("Callback of %s rising edge activated", port->name);
 	set_onoff(&button0, true);
 }
 /// @brief callback for a switch/lever to turn OFF an OnOff-Server
@@ -174,7 +174,7 @@ static void lever_fallingEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
-	LOG_DBG("Callback of %d button falling edge activated", sw0_spec.pin);
+	LOG_DBG("Callback of %s button falling edge activated", port->name);
 	set_onoff(&button0, false);
 }
 
@@ -193,7 +193,7 @@ static void sw1_risingEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
-	LOG_DBG("Callback of %d button rising edge activated", sw1_spec.pin);
+	LOG_DBG("Callback of %s button rising edge activated", port->name);
 	move_level(&button1, 0, 0, 0);
 }
 
@@ -203,7 +203,7 @@ static void sw2_risingEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
-	LOG_DBG("Callback of %d button rising edge activated", sw2_spec.pin);
+	LOG_DBG("Callback of %s button rising edge activated", port->name);
 	onOff_dim_decider_pressed(&decider_data);
 }
 
@@ -211,7 +211,7 @@ static void sw3_fallingEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
-	LOG_DBG("Callback of %d button falling edge activated", sw3_spec.pin);
+	LOG_DBG("Callback of %s button falling edge activated", port->name);
 	onOff_dim_decider_released(&decider_data);
 }
 

@@ -1,14 +1,3 @@
-/*
- * Copyright (c) 2019 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-
-/**
- * @file
- * @brief Model handler
- */
-
 #ifndef MODEL_HANDLER_H__
 #define MODEL_HANDLER_H__
 
@@ -25,7 +14,7 @@
 #include "relais_cli_mod.h"
 #include "lvl_cli_mod.h"
 
-#include"lc_pwm_output.h"					//for in & outut (gpio)
+#include"gpio_pwm_helpers.h"					//for in & outut (gpio)
 
 
 

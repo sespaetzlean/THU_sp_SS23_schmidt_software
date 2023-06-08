@@ -11,7 +11,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 
-#include "lc_pwm_output.h"
+#include "gpio_pwm_helpers.h"
 
 
 #ifdef __cplusplus

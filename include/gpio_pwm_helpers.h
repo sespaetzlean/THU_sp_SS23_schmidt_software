@@ -1,11 +1,5 @@
-
-/**
- * @file
- * @brief Lc pwm led module
- */
-
-#ifndef LC_PWM_OUTPUT_H__
-#define LC_PWM_OUTPUT_H__
+#ifndef GPIO_PWM_HELPERS_H__
+#define GPIO_PWM_HELPERS_H__
 
 #include <zephyr/types.h>
 #include <bluetooth/mesh/models.h>
@@ -47,4 +41,4 @@ int configure_gpi_interrupt(const struct gpio_dt_spec *spec,
 }
 #endif
 
-#endif /* LC_PWM_OUTPUT_H__ */
+#endif /* GPIO_PWM_HELPERS_H__ */

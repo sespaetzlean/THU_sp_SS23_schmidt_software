@@ -1,4 +1,4 @@
-#include "lc_pwm_output.h"
+#include "gpio_pwm_helpers.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_out,LOG_LEVEL_DBG);

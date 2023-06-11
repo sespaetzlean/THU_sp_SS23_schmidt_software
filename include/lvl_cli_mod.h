@@ -80,7 +80,7 @@ int move_level(struct dimmable_cli_ctx *button,
 
 struct onOff_dim_decider_data {
     struct dimmable_cli_ctx *client_ctx;
-    /** When turning of the last level is saved here to be able to restore later
+    /** When turning off the last level is saved here to be able to restore
      * is used in function: toggle_lvl_onOff
      * When currently on, this is set to 0
     */
@@ -91,9 +91,8 @@ struct onOff_dim_decider_data {
     bool last_increased;
     /** timestamp needed for calculation how long button was pressed*/
     int64_t timestamp;
-    /** flag to save is pressed or released was last to not execute this twice*/
+    /** true when turning-on was done last, false when turning-off*/
     bool last_pressed;
-    /**the functions that are needed */
 };
 
 /// @brief initialize the onOff_dim_decider_data struct

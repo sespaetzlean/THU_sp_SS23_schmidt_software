@@ -305,7 +305,22 @@ void onOff_dim_decider_released(struct onOff_dim_decider_data *data)
 		toggle_lvl_onOff(data, NULL);
 	} else {
 		//stop moving
-		move_level(data->client_ctx, 0, 0, 0);
+		/**
+		 * here, always the acknowledged command shall be executed
+		 * This is needed as for the next operation, the helper struct has to know the current values
+		 * in order to decide on the right next action
+		 * ! This may lead to a lot of ack messages if the group is large !
+		 */
+		struct bt_mesh_model_transition tempTran = {
+			.delay = 0,
+			.time = 0,
+		};
+		struct bt_mesh_lvl_move_set tempSet = {
+			.delta = 0,
+			.transition = &tempTran,
+		};
+		LOG_DBG("Move stopped with ACK-com");
+		bt_mesh_lvl_cli_move_set(&data->client_ctx->client, NULL, &tempSet, NULL);
 		//TODO: check return code
 	}
 }

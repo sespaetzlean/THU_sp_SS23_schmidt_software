@@ -4,7 +4,7 @@
 LOG_MODULE_REGISTER(att_mod,LOG_LEVEL_DBG);
 
 
-#define INFO_LED_NODE    DT_ALIAS(info0led)
+#define INFO_LED_NODE    DT_ALIAS(led3)
 
 #if DT_NODE_HAS_STATUS(INFO_LED_NODE, okay)
 static const struct gpio_dt_spec info_led_spec = GPIO_DT_SPEC_GET(INFO_LED_NODE, gpios);
@@ -14,17 +14,20 @@ static const struct gpio_dt_spec info_led_spec = GPIO_DT_SPEC_GET(INFO_LED_NODE,
 
 
 static bool attention;
-struct k_work_delayable attention_blink_work;
+static struct k_work_delayable attention_blink_work;
 
 
-void attention_blink(struct k_work *work)
+/// @brief work struct that executes tasks to attract attention
+/// @param work 
+static void attention_blink(struct k_work *work)
 {
 	if (attention) {
 		gpio_pin_toggle_dt(&info_led_spec);
 		k_work_reschedule(&attention_blink_work, K_MSEC(300));
+		LOG_DBG("Blink");
 	} else {
 		gpio_pin_set_dt(&info_led_spec, 0);
-		LOG_INF("Attention turned of");
+		LOG_DBG("Stop blinking");
 	}
 }
 
@@ -39,11 +42,13 @@ void attention_off(struct bt_mesh_model *mod)
 {
 	/* Will stop rescheduling blink timer */
 	attention = false;
+	LOG_INF("Attention turned off");
 }
 
 int attention_init()
 {
 	int err = single_device_init(info_led_spec.port);
+	err += gpio_pin_configure_dt(&info_led_spec, GPIO_OUTPUT_INACTIVE);	
 	k_work_init_delayable(&attention_blink_work, attention_blink);
 	return err;
 }

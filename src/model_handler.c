@@ -123,6 +123,7 @@ static struct dimmable_srv_ctx myDimmable_ctx = {
 
 
 // ====== lightness initializations ----------------------------------------- //
+/*
 static const struct bt_mesh_lightness_srv_handlers lightness_srv_handlers = {
 	.light_set = light_set,
 	.light_get = light_get,
@@ -133,6 +134,7 @@ static struct lightness_ctx myLightness_ctx = {
 	.srv = BT_MESH_LIGHTNESS_SRV_INIT(&lightness_srv_handlers),
 	.pwm_output = pwm0_setWrapper,
 };
+*/
 
 
 
@@ -226,9 +228,7 @@ static void sw3_fallingEdge_cb(const struct device *port,
 
 
 
-// =================================== health service ======================= //
-//this is defined in health_model.c
-extern struct k_work_delayable attention_blink_work;		
+// =================================== health service ======================= //		
 
 static const struct bt_mesh_health_srv_cb health_srv_cb = {
 	.attn_on = attention_on,

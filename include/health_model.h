@@ -27,11 +27,6 @@ void attention_on(struct bt_mesh_model *mod);
 /// @param mod 
 void attention_off(struct bt_mesh_model *mod);
 
-/// @brief work struct that executes tasks to attract attention
-/// @param work 
-void attention_blink(struct k_work *work);
-
-
 /// @brief shall be called before attention is used
 /// @return 0 on success
 int attention_init();

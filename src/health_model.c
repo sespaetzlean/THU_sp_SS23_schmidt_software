@@ -4,7 +4,7 @@
 LOG_MODULE_REGISTER(att_mod,LOG_LEVEL_DBG);
 
 
-#define INFO_LED_NODE    DT_ALIAS(led3)
+#define INFO_LED_NODE    DT_ALIAS(infogreenled)
 
 #if DT_NODE_HAS_STATUS(INFO_LED_NODE, okay)
 static const struct gpio_dt_spec info_led_spec = GPIO_DT_SPEC_GET(INFO_LED_NODE, gpios);
@@ -47,8 +47,8 @@ void attention_off(struct bt_mesh_model *mod)
 
 int attention_init()
 {
-	int err = single_device_init(info_led_spec.port);
-	err += gpio_pin_configure_dt(&info_led_spec, GPIO_OUTPUT_INACTIVE);	
+	int err = abs(single_device_init(info_led_spec.port));
+	err += abs(gpio_pin_configure_dt(&info_led_spec, GPIO_OUTPUT_INACTIVE));	
 	k_work_init_delayable(&attention_blink_work, attention_blink);
 	return err;
 }

@@ -301,39 +301,39 @@ const struct bt_mesh_comp *model_handler_init(void)
 {
 	int err = 0;
 	//init attention
-	err += attention_init();
+	err += abs(attention_init());
 
 
 	//init IO first
-	err += single_device_init(pwm0_spec.dev);	//pwm out pin
+	err += abs(single_device_init(pwm0_spec.dev));	//pwm out pin
 
-	err += single_device_init(led1_spec.port);	//gpio out pin
+	err += abs(single_device_init(led1_spec.port));	//gpio out pin
 	//gpio out pin
-	err += gpio_pin_configure_dt(&led1_spec, GPIO_OUTPUT_INACTIVE);	
+	err += abs(gpio_pin_configure_dt(&led1_spec, GPIO_OUTPUT_INACTIVE));	
 	
-	err += single_device_init(sw0_spec.port);	//gpio in pin
-	err += configure_gpi_interrupt(&sw0_spec, 
+	err += abs(single_device_init(sw0_spec.port));	//gpio in pin
+	err += abs(configure_gpi_interrupt(&sw0_spec, 
 		GPIO_INT_EDGE_TO_ACTIVE, 
 		&sw0_cb_data, 
-		button0_risingEdge_cb);
+		button0_risingEdge_cb));
 
-	err += single_device_init(sw1_spec.port);	//gpio in pin
-	err += configure_gpi_interrupt(&sw1_spec, 
+	err += abs(single_device_init(sw1_spec.port));	//gpio in pin
+	err += abs(configure_gpi_interrupt(&sw1_spec, 
 		GPIO_INT_EDGE_TO_ACTIVE, 
 		&sw1_cb_data, 
-		sw1_risingEdge_cb);
+		sw1_risingEdge_cb));
 
-	err += single_device_init(sw2_spec.port);	//gpio in pin
-	err += configure_gpi_interrupt(&sw2_spec, 
+	err += abs(single_device_init(sw2_spec.port));	//gpio in pin
+	err += abs(configure_gpi_interrupt(&sw2_spec, 
 		GPIO_INT_EDGE_TO_ACTIVE, 
 		&sw2_cb_data, 
-		sw2_risingEdge_cb);
+		sw2_risingEdge_cb));
 	//!!! short P0.15 & P0.16 for this!!!
-	err += single_device_init(sw3_spec.port);	//gpio in pin
-	err += configure_gpi_interrupt(&sw3_spec, 
+	err += abs(single_device_init(sw3_spec.port));	//gpio in pin
+	err += abs(configure_gpi_interrupt(&sw3_spec, 
 		GPIO_INT_EDGE_TO_INACTIVE, 
 		&sw3_cb_data, 
-		sw3_fallingEdge_cb);		
+		sw3_fallingEdge_cb));		
 
 	if (0 != err) {
 		LOG_ERR("Error during initialization");

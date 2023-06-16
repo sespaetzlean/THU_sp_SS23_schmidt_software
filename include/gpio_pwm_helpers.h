@@ -1,6 +1,17 @@
 #ifndef GPIO_PWM_HELPERS_H__
 #define GPIO_PWM_HELPERS_H__
 
+#include <inttypes.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
 #include <zephyr/types.h>
 #include <bluetooth/mesh/models.h>
 
@@ -35,6 +46,24 @@ int configure_gpi_interrupt(const struct gpio_dt_spec *spec,
 			gpio_flags_t flags, 
 			struct gpio_callback *callback, 
 			gpio_callback_handler_t handler);
+
+
+struct adc_channel_ctx {
+	//buffer to store analog value
+	int16_t buf;
+
+	struct adc_sequence sequence;
+	//channel to use
+	const struct adc_dt_spec *adc_channel;
+};
+
+
+int adc_pin_init(const struct adc_dt_spec *adc_channel, 
+			struct adc_channel_ctx *adc_ctx);
+
+int16_t read_adc_digital(struct adc_channel_ctx *adc_ctx);
+
+int32_t read_adc_volt(struct adc_channel_ctx *adc_ctx);
 
 
 #ifdef __cplusplus

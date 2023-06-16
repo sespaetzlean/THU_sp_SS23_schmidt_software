@@ -5,9 +5,27 @@
 
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/drivers/hwinfo.h>
+#include "gpio_pwm_helpers.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(MAIN,LOG_LEVEL_DBG);
+
+// ======================== Temperature watchdog ============================ //
+#if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
+	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
+#error "No suitable devicetree overlay specified"
+#endif
+
+#define DT_SPEC_AND_COMMA(node_id, prop, idx) \
+	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+
+
+static const struct adc_dt_spec adc_channels[] = {
+	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
+			     DT_SPEC_AND_COMMA)
+};
+
+static struct adc_channel_ctx adc_ctx;
 
 
 
@@ -23,7 +41,7 @@ static const struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
 };
 
-const struct bt_mesh_prov *bt_mesh_MY_prov_init(void)
+static const struct bt_mesh_prov *bt_mesh_MY_prov_init(void)
 {
 	/* Generate an RFC-4122 version 4 compliant UUID.
 	See dk_prov.c for details*/
@@ -86,6 +104,16 @@ static void bt_ready(int err)
 void main(void)
 {
 	int err;
+	//TODO: set dcdc enable pin high
+
+	//TODO: init and schedule constant temperature check
+	err = adc_pin_init(&adc_channels[0], &adc_ctx);
+	if (err != 0) {
+		LOG_ERR("ADC init failed (err %d)\n", err);
+		return;
+	}
+	int16_t adc_value = read_adc_digital(&adc_ctx);
+	LOG_WRN("First ADC val: %d", adc_value);
 
 	LOG_DBG("Initializing...\n");
 

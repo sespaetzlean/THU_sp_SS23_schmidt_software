@@ -44,7 +44,7 @@ static void dimmer0_safe_setWrapper(uint16_t pwmValue)
 #if DT_NODE_HAS_STATUS(RELAIS1_NODE, okay)
 static const struct gpio_dt_spec led1_spec = GPIO_DT_SPEC_GET(RELAIS1_NODE, gpios);
 #else
-#error "Unsupported board: relais-output devicetree alias is not defined"
+#error "Unsupported board: relaisoutput devicetree alias is not defined"
 #endif
 
 
@@ -62,11 +62,11 @@ static void relais1_safe_setWrapper(const bool onOff_value)
 
 
 // === gpio in definition with interrupt === //
-#define SW0_NODE     DT_ALIAS(sw0)
+#define SW0_NODE     DT_ALIAS(relaistogglebutton)
 #if DT_NODE_HAS_STATUS(SW0_NODE, okay)
 static const struct gpio_dt_spec sw0_spec = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 #else
-#error "Unsupported board: sw0 devicetree alias is not defined"
+#error "Unsupported board: relaistogglebutton devicetree alias is not defined"
 #endif
 static struct gpio_callback sw0_cb_data;
 
@@ -78,19 +78,19 @@ static const struct gpio_dt_spec sw1_spec = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
 #endif
 static struct gpio_callback sw1_cb_data;
 
-#define SW2_NODE     DT_ALIAS(sw2)
+#define SW2_NODE     DT_ALIAS(dimmonoffbuttonrisingedge)
 #if DT_NODE_HAS_STATUS(SW2_NODE, okay)
 static const struct gpio_dt_spec sw2_spec = GPIO_DT_SPEC_GET(SW2_NODE, gpios);
 #else
-#error "Unsupported board: sw2 devicetree alias is not defined"
+#error "Unsupported board: dimmonoffbuttonrisingedge devicetree alias is not defined"
 #endif
 static struct gpio_callback sw2_cb_data;
 
-#define SW3_NODE     DT_ALIAS(sw3)
+#define SW3_NODE     DT_ALIAS(dimmonoffbuttonfallingedge)
 #if DT_NODE_HAS_STATUS(SW3_NODE, okay)
 static const struct gpio_dt_spec sw3_spec = GPIO_DT_SPEC_GET(SW3_NODE, gpios);
 #else
-#error "Unsupported board: sw3 devicetree alias is not defined"
+#error "Unsupported board: dimmonoffbuttonfallingedge devicetree alias is not defined"
 #endif
 static struct gpio_callback sw3_cb_data;
 

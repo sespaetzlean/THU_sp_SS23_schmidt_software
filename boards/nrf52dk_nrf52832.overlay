@@ -5,10 +5,15 @@
 
 	aliases {
 		//added for Hausautomatisierung
+		//outputs
 		infogreenled = &led3;
 		relaisoutput = &led1;
 		dimmeroutput = &pwm_led0;
 		dcdcen = &led2;
+		//inputs
+		relaistogglebutton = &button0;
+		dimmonoffbuttonrisingedge = &button2;
+		dimmonoffbuttonfallingedge = &button3;
 		// end of Hausautomatisierung
 	};
  };

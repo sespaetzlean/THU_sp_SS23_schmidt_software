@@ -35,10 +35,10 @@ struct output_command {
         bool off_value;
         uint16_t off_level;
     };
-    //these functions shall return 0 on success
+    //these functions shall return what they have physically set on the output
     union {
-        int (*gpio_set)(bool value);
-        int (*pwm_set)(uint16_t value);
+        bool (*gpio_set)(bool value);
+        uint16_t (*pwm_set)(uint16_t value);
     };
 };
 
@@ -70,8 +70,8 @@ int init_temperature_watchdog(struct temp_watchdog_ctx *temp_ctx,
 /// @param cmd_number number that was assigned when command was registered
 /// (normally in form of an enum)
 /// @param onOFF_value the value to be set
-/// @return 0 on success, 3 if temperature is out of bounds, -1 on other error
-int safely_switch_onOff(struct temp_watchdog_ctx *temp_ctx, 
+/// @return onOff_value that has been physically set
+bool safely_switch_onOff(struct temp_watchdog_ctx *temp_ctx, 
             const int cmd_number, 
             const bool onOFF_value);
 
@@ -82,8 +82,8 @@ int safely_switch_onOff(struct temp_watchdog_ctx *temp_ctx,
 /// @param cmd_number number that was assigned when command was registered
 /// (normally in form of an enum)
 /// @param level level to be set
-/// @return 0 on success, 3 if temperature is out of bounds, -1 on other error
-int safely_switch_level(struct temp_watchdog_ctx *temp_ctx, 
+/// @return level that has been physically set
+uint16_t safely_switch_level(struct temp_watchdog_ctx *temp_ctx, 
             const int cmd_number, 
             const uint16_t level);
 

@@ -51,10 +51,10 @@ static const struct gpio_dt_spec led1_spec = GPIO_DT_SPEC_GET(RELAIS1_NODE, gpio
 /// @brief wrapper function as this definition is needed 
 /// for the relais_srv_ctx struct
 /// @param onOff_value true = on, false = off
-static void relais1_safe_setWrapper(const bool onOff_value)
+static bool relais1_safe_setWrapper(const bool onOff_value)
 {
 	LOG_DBG("called relais1_safe_setWrapper with value %d on cmd %d", onOff_value, SWITCH_RELAIS1_CMD_TW);
-	safely_switch_onOff(&temperature_watchdog, 
+	return safely_switch_onOff(&temperature_watchdog, 
 		SWITCH_RELAIS1_CMD_TW, 
 		onOff_value);
 }
@@ -237,14 +237,17 @@ static void sw3_fallingEdge_cb(const struct device *port,
 
 
 // === for relais model === //
-static int execute_relais1_set_wrapper(bool value)
+static bool execute_relais1_set_wrapper(bool value)
 {
 	LOG_DBG("execute_relais1_set_wrapper: %d", value);
 	if(value) 
+	{
 		gpio_pin_set_dt(&led1_spec, 1);
-	else
+	}
+	else {
 		gpio_pin_set_dt(&led1_spec, 0);
-	return 0;
+	}
+	return value;
 }
 
 static struct output_command relais1_cmd = {

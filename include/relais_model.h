@@ -23,7 +23,7 @@ struct relais_srv_ctx {
 	uint32_t remaining;				//remaining time until operation is finished
 	bool value;				//present or future value of the relais
 	//function pointer that executes onOff of appliance
-	void (*relais_output)(bool onOFF_value);	
+	bool (*relais_output)(bool onOFF_value);	
 };
 
 

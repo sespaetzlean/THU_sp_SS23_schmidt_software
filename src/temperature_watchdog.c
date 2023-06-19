@@ -151,15 +151,14 @@ int init_temperature_watchdog(struct temp_watchdog_ctx *temp_ctx,
 
 
 
-int safely_switch_onOff(struct temp_watchdog_ctx *temp_ctx, 
+bool safely_switch_onOff(struct temp_watchdog_ctx *temp_ctx, 
             const int cmd_number, 
             const bool onOFF_value)
 {
+    struct output_command *cmd_temp = get_output_cmd(temp_ctx, cmd_number);
     if(!proof_legal_temperature(temp_ctx)) {
         LOG_WRN("Can't switch, temperature is out of bounds");
-        return 3;
     } else {
-        struct output_command *cmd_temp = get_output_cmd(temp_ctx, cmd_number);
         if(cmd_temp->cmd_type == OUTPUT_COMMAND_TYPE_ONOFF) {
             LOG_DBG("Safely switch to %d", onOFF_value);
             return cmd_temp->gpio_set(onOFF_value);
@@ -167,22 +166,21 @@ int safely_switch_onOff(struct temp_watchdog_ctx *temp_ctx,
             LOG_ERR("Wrong command type");
         }
     }
-    return -1;
+    return cmd_temp->off_value;
 }
 
 
 
 
 
-int safely_switch_level(struct temp_watchdog_ctx *temp_ctx, 
+uint16_t safely_switch_level(struct temp_watchdog_ctx *temp_ctx, 
             const int cmd_number, 
             const uint16_t level)
 {
+    struct output_command *cmd_temp = get_output_cmd(temp_ctx, cmd_number);
     if(!proof_legal_temperature(temp_ctx)) {
         LOG_WRN("Can't switch, temperature is out of bounds");
-        return 3;
     } else {
-        struct output_command *cmd_temp = get_output_cmd(temp_ctx, cmd_number);
         if(cmd_temp->cmd_type == OUTPUT_COMMAND_TYPE_LEVEL) {
             LOG_DBG("Safely set value to %d", level);
             return cmd_temp->pwm_set(level);
@@ -190,7 +188,7 @@ int safely_switch_level(struct temp_watchdog_ctx *temp_ctx,
             LOG_ERR("Wrong command type");
         }
     }
-    return -1;
+    return cmd_temp->off_level;
 }
 
 

@@ -17,13 +17,13 @@ extern struct temp_watchdog_ctx temperature_watchdog;
 
 // ============================= IO definitions ============================= //
 // === pwm definitions === //
-#define PWM_OUT0_NODE	DT_ALIAS(pwm_led0)
+#define DIMMER0_NODE	DT_ALIAS(dimmeroutput)
 
 
-#if DT_NODE_HAS_STATUS(PWM_OUT0_NODE, okay)
-static const struct pwm_dt_spec pwm0_spec = PWM_DT_SPEC_GET(PWM_OUT0_NODE);
+#if DT_NODE_HAS_STATUS(DIMMER0_NODE, okay)
+static const struct pwm_dt_spec pwm0_spec = PWM_DT_SPEC_GET(DIMMER0_NODE);
 #else
-#error "Unsupported board: pwm-out0 devicetree alias is not defined"
+#error "Unsupported board: dimmer-output devicetree alias is not defined"
 #endif
 
 
@@ -39,12 +39,12 @@ static void dimmer0_safe_setWrapper(uint16_t pwmValue)
 
 
 // === gpio out definition === //
-#define LED1_NODE    DT_ALIAS(led1)
+#define RELAIS1_NODE    DT_ALIAS(relaisoutput)
 
-#if DT_NODE_HAS_STATUS(LED1_NODE, okay)
-static const struct gpio_dt_spec led1_spec = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
+#if DT_NODE_HAS_STATUS(RELAIS1_NODE, okay)
+static const struct gpio_dt_spec led1_spec = GPIO_DT_SPEC_GET(RELAIS1_NODE, gpios);
 #else
-#error "Unsupported board: led1 devicetree alias is not defined"
+#error "Unsupported board: relais-output devicetree alias is not defined"
 #endif
 
 

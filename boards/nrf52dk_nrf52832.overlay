@@ -2,6 +2,15 @@
 	zephyr,user {
 	   io-channels = <&adc 1>;
 	};
+
+	aliases {
+		//added for Hausautomatisierung
+		infogreenled = &led3;
+		relaisoutput = &led1;
+		dimmeroutput = &pwm_led0;
+		dcdcen = &led2;
+		// end of Hausautomatisierung
+	};
  };
 
  &adc {

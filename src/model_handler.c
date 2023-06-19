@@ -4,6 +4,15 @@
 LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
 
 
+// ===================== temperature watchdog ====================== //
+
+enum cmd_2_register_temp_watchdog {
+	SWITCH_RELAIS1_CMD_TW,
+	SET_DIMMER1_CMD_TW,
+};
+
+extern struct temp_watchdog_ctx temperature_watchdog;
+
 // ============================= IO definitions ============================= //
 // === pwm definitions === //
 #define PWM_OUT0_NODE	DT_ALIAS(pwm_led0)
@@ -18,10 +27,11 @@ static const struct pwm_dt_spec pwm0_spec = PWM_DT_SPEC_GET(PWM_OUT0_NODE);
 
 /// @brief wrapper function as this definition is needed 
 /// for the dimmable_srv_ctx struct
-/// @param pwmValue value the led_out shall be set too.
-static void pwm0_setWrapper(uint16_t pwmValue)
+/// @param pwmValue value the led_out shall be set to.
+static void dimmer0_safe_setWrapper(uint16_t pwmValue)
 {
-	lc_pwm_output_set(&pwm0_spec, pwmValue);
+	LOG_DBG("called dimmer0_safe_setWrapper with value %d on cmd %d", pwmValue, SET_DIMMER1_CMD_TW);
+	safely_switch_level(&temperature_watchdog, SET_DIMMER1_CMD_TW, pwmValue);
 }
 
 
@@ -39,12 +49,12 @@ static const struct gpio_dt_spec led1_spec = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 /// @brief wrapper function as this definition is needed 
 /// for the relais_srv_ctx struct
 /// @param onOff_value true = on, false = off
-static void led1_setWrapper(const bool onOff_value)
+static void relais1_safe_setWrapper(const bool onOff_value)
 {
-	if(onOff_value)
-		gpio_pin_set_dt(&led1_spec, 1);
-	else
-		gpio_pin_set_dt(&led1_spec, 0);
+	LOG_DBG("called relais1_safe_setWrapper with value %d on cmd %d", onOff_value, SWITCH_RELAIS1_CMD_TW);
+	safely_switch_onOff(&temperature_watchdog, 
+		SWITCH_RELAIS1_CMD_TW, 
+		onOff_value);
 }
 
 
@@ -86,6 +96,7 @@ static struct gpio_callback sw3_cb_data;
 
 
 
+// ============================= model definitions ========================== //
 
 
 
@@ -99,7 +110,7 @@ static const struct bt_mesh_onoff_srv_handlers onoff_handlers = {
 
 static struct relais_srv_ctx myRelais_ctx = { 
 	.srv = BT_MESH_ONOFF_SRV_INIT(&onoff_handlers), 
-	.relais_output = led1_setWrapper
+	.relais_output = relais1_safe_setWrapper,
 };
 
 
@@ -115,7 +126,7 @@ static const struct bt_mesh_lvl_srv_handlers lvl_handlers = {
 
 static struct dimmable_srv_ctx myDimmable_ctx = { 
 	.srv = BT_MESH_LVL_SRV_INIT(&lvl_handlers), 
-	.pwm_output = pwm0_setWrapper,
+	.pwm_output = dimmer0_safe_setWrapper,
 };
 
 
@@ -132,7 +143,7 @@ static const struct bt_mesh_lightness_srv_handlers lightness_srv_handlers = {
 static struct lightness_ctx myLightness_ctx = {
 	//TODO
 	.srv = BT_MESH_LIGHTNESS_SRV_INIT(&lightness_srv_handlers),
-	.pwm_output = pwm0_setWrapper,
+	.pwm_output = dimmer0_safe_setWrapper,
 };
 */
 
@@ -224,6 +235,42 @@ static void sw3_fallingEdge_cb(const struct device *port,
 
 
 
+// === for relais model === //
+static int execute_relais1_set_wrapper(bool value)
+{
+	LOG_DBG("execute_relais1_set_wrapper: %d", value);
+	if(value) 
+		gpio_pin_set_dt(&led1_spec, 1);
+	else
+		gpio_pin_set_dt(&led1_spec, 0);
+	return 0;
+}
+
+static struct output_command relais1_cmd = {
+	.cmd_type = OUTPUT_COMMAND_TYPE_ONOFF,
+	.off_value = false,
+	.gpio_set = execute_relais1_set_wrapper,
+};
+
+// === for level model === //
+static int execute_dimmer1_set_wrapper(uint16_t value)
+{
+	LOG_DBG("execute_dimmer1_set_wrapper: %d", value);
+	lc_pwm_output_set(&pwm0_spec, value);
+	return 0;
+}
+
+static struct output_command dimmer1_cmd = {
+	.cmd_type = OUTPUT_COMMAND_TYPE_LEVEL,
+	.off_level = 0,
+	.pwm_set = execute_dimmer1_set_wrapper,
+};
+
+
+
+
+
+
 
 
 
@@ -259,9 +306,9 @@ static struct bt_mesh_model std_relais_models[] = {
 	//same applies to the health model: every node has this in its 1. element
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	
 	//TODO: === Select right model ===
-	//BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
-	BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
-	// BT_MESH_MODEL_LIGHTNESS_SRV(&myLightness_ctx.srv),
+	BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
+	// BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
+	// //BT_MESH_MODEL_LIGHTNESS_SRV(&myLightness_ctx.srv),
 
 };
 
@@ -344,11 +391,19 @@ const struct bt_mesh_comp *model_handler_init(void)
 	//init decider stuff
 	onOff_dim_decider_init(&decider_data, &level0_ctr);
 
+	//add safely_execute_functions to temperature watchdog
+	register_output_cmd(&temperature_watchdog, 
+				&relais1_cmd, 
+				SWITCH_RELAIS1_CMD_TW);
+	register_output_cmd(&temperature_watchdog, 
+				&dimmer1_cmd, 
+				SET_DIMMER1_CMD_TW);
+
 	// === add all work_items to scheduler === //
 	//TODO: === select right model ===
-	// k_work_init_delayable(&myRelais_ctx.work, relais_work);
-	k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
-	// k_work_init_delayable(&myLightness_ctx.work, lightness_work);
+	k_work_init_delayable(&myRelais_ctx.work, relais_work);
+	// k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
+	// // k_work_init_delayable(&myLightness_ctx.work, lightness_work);
 
 	return &comp;
 }

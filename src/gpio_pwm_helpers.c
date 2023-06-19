@@ -1,7 +1,7 @@
 #include "gpio_pwm_helpers.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_out,LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(gpio_pwm_adc,LOG_LEVEL_DBG);
 
 
 #define PWM_PERIOD 1024     //microseconds it takes for one pwm cycle

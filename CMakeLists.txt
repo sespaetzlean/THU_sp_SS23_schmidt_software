@@ -19,6 +19,7 @@ target_sources(app PRIVATE
   src/lightness_model.c
   src/relais_cli_mod.c
   src/lvl_cli_mod.c
+  src/temperature_watchdog.c
   src/gpio_pwm_helpers.c)
 target_include_directories(app PRIVATE include)
 

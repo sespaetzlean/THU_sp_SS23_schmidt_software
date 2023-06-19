@@ -6,11 +6,14 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/drivers/hwinfo.h>
 #include "gpio_pwm_helpers.h"
+#include "temperature_watchdog.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(MAIN,LOG_LEVEL_DBG);
 
 // ======================== Temperature watchdog ============================ //
+
+//adc
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
 	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
 #error "No suitable devicetree overlay specified"
@@ -26,6 +29,9 @@ static const struct adc_dt_spec adc_channels[] = {
 };
 
 static struct adc_channel_ctx adc_ctx;
+
+//temperature watchdog
+struct temp_watchdog_ctx temperature_watchdog;
 
 
 
@@ -99,6 +105,17 @@ static void bt_ready(int err)
 
 
 
+static int16_t readTemperatureFromADC_wrapper(void)
+{
+	int16_t adc_value = read_adc_digital(&adc_ctx);
+	//TODO: convert adc value to temperature properly
+	return adc_value / 20;
+}
+
+
+
+
+
 
 // ============================ MAIN ======================================== //
 void main(void)
@@ -112,8 +129,10 @@ void main(void)
 		LOG_ERR("ADC init failed (err %d)\n", err);
 		return;
 	}
-	int16_t adc_value = read_adc_digital(&adc_ctx);
-	LOG_WRN("First ADC val: %d", adc_value);
+	err = init_temperature_watchdog(&temperature_watchdog, 
+		readTemperatureFromADC_wrapper);
+
+
 
 	LOG_DBG("Initializing...\n");
 

@@ -11,6 +11,16 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(MAIN,LOG_LEVEL_DBG);
 
+// ======================== DcDc enable ===================================== //
+
+#define DCDCEN_NODE    DT_ALIAS(dcdcen)
+
+#if DT_NODE_HAS_STATUS(DCDCEN_NODE, okay)
+static const struct gpio_dt_spec dcdcen_spec = GPIO_DT_SPEC_GET(DCDCEN_NODE, gpios);
+#else
+#error "Unsupported board: dcdcen devicetree alias is not defined"
+#endif
+
 // ======================== Temperature watchdog ============================ //
 
 //adc
@@ -30,7 +40,7 @@ static const struct adc_dt_spec adc_channels[] = {
 
 static struct adc_channel_ctx adc_ctx;
 
-//temperature watchdog
+//instance of temperature watchdog
 struct temp_watchdog_ctx temperature_watchdog;
 
 
@@ -121,9 +131,15 @@ static int16_t readTemperatureFromADC_wrapper(void)
 void main(void)
 {
 	int err;
-	//TODO: set dcdc enable pin high
-
-	//TODO: init and schedule constant temperature check
+	// set DcDc enable pin high first 
+	// to prevent DcDc-converter from powering down again
+	err = abs(single_device_init(dcdcen_spec.port));
+	err += abs(gpio_pin_configure_dt(&dcdcen_spec, GPIO_OUTPUT_ACTIVE));
+	if (err != 0) {
+		LOG_ERR("DcDc enable pin init failed (err %d)", err);
+		return;
+	}
+	//init and schedule constant temperature check
 	err = adc_pin_init(&adc_channels[0], &adc_ctx);
 	if (err != 0) {
 		LOG_ERR("ADC init failed (err %d)\n", err);

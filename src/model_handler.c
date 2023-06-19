@@ -13,6 +13,8 @@ enum cmd_2_register_temp_watchdog {
 
 extern struct temp_watchdog_ctx temperature_watchdog;
 
+//more definitions later before model construction
+
 // ============================= IO definitions ============================= //
 // === pwm definitions === //
 #define PWM_OUT0_NODE	DT_ALIAS(pwm_led0)
@@ -141,7 +143,6 @@ static const struct bt_mesh_lightness_srv_handlers lightness_srv_handlers = {
 };
 
 static struct lightness_ctx myLightness_ctx = {
-	//TODO
 	.srv = BT_MESH_LIGHTNESS_SRV_INIT(&lightness_srv_handlers),
 	.pwm_output = dimmer0_safe_setWrapper,
 };
@@ -168,7 +169,7 @@ static void button0_risingEdge_cb(const struct device *port,
 	toggle_onoff(&relais0_ctr);
 }
 
-/// @brief callback for a switch/lever to turn ON an OnOff-Server
+/// @brief callback for a switch/lever to turn ON relais0_ctr OnOff-Server
 /// @param port 
 /// @param cb 
 /// @param pins 
@@ -179,7 +180,7 @@ static void lever_risingEdge_cb(const struct device *port,
 	LOG_DBG("Callback of %s rising edge activated", port->name);
 	set_onoff(&relais0_ctr, true);
 }
-/// @brief callback for a switch/lever to turn OFF an OnOff-Server
+/// @brief callback for a switch/lever to turn OFF relais0_ctr OnOff-Server
 /// @param port 
 /// @param cb 
 /// @param pins 
@@ -305,12 +306,18 @@ static struct bt_mesh_model std_relais_models[] = {
 	BT_MESH_MODEL_CFG_SRV,		
 	//same applies to the health model: every node has this in its 1. element
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),	
-	//TODO: === Select right model ===
 	BT_MESH_MODEL_ONOFF_SRV(&myRelais_ctx.srv),
-	// BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
-	// //BT_MESH_MODEL_LIGHTNESS_SRV(&myLightness_ctx.srv),
-
 };
+
+static struct bt_mesh_model std_dimmer_models[] = {
+	BT_MESH_MODEL_LVL_SRV(&myDimmable_ctx.srv),
+};
+
+/*
+static struct bt_mesh_model std_lightness_models[] = {
+	BT_MESH_MODEL_LIGHTNESS_SRV(&myLightness_ctx.srv),
+};
+*/
 
 
 // === sensor models === //
@@ -328,8 +335,10 @@ static struct bt_mesh_model level_sensor_models[] = {
 //in case there are multiple elements of same kind
 static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(1, std_relais_models, BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(2, relais_sensor_models, BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(3, level_sensor_models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(2, std_dimmer_models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(3, relais_sensor_models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(4, level_sensor_models, BT_MESH_MODEL_NONE),
+	// //BT_MESH_ELEM(5, std_lightness_models, BT_MESH_MODEL_NONE),
 };
 
 /// @brief compose the node
@@ -383,9 +392,9 @@ const struct bt_mesh_comp *model_handler_init(void)
 		sw3_fallingEdge_cb));		
 
 	if (0 != err) {
-		LOG_ERR("Error during initialization");
+		LOG_ERR("Error during GPIO-initialization");
 	} else {
-		LOG_INF("all Inits successful");
+		LOG_INF("all GPIO-Inits successful");
 	}
 
 	//init decider stuff
@@ -400,9 +409,8 @@ const struct bt_mesh_comp *model_handler_init(void)
 				SET_DIMMER1_CMD_TW);
 
 	// === add all work_items to scheduler === //
-	//TODO: === select right model ===
 	k_work_init_delayable(&myRelais_ctx.work, relais_work);
-	// k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
+	k_work_init_delayable(&myDimmable_ctx.work, dimmable_work);
 	// // k_work_init_delayable(&myLightness_ctx.work, lightness_work);
 
 	return &comp;

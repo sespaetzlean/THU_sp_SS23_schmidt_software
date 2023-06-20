@@ -253,7 +253,7 @@ static bool execute_relais1_set_wrapper(bool value)
 static void update_relais1_state_wrapper(bool current_value)
 {
 	LOG_DBG("update_relais1_state_wrapper: %d", current_value);
-	//TODO: implement
+	relais_update(&myRelais_ctx, current_value, 0);
 }
 
 static struct output_command relais1_cmd = {

@@ -35,6 +35,20 @@ static void relais_status(const struct relais_srv_ctx *relais,
 
 
 
+/// @brief helper to publish status msg derived from relais_srv_ctx
+/// @param relais 
+/// @return return code from bt_mesh_onoff_srv_pub
+static int publish_relais_status(struct relais_srv_ctx * relais)
+{
+	struct bt_mesh_onoff_status tempStatus;
+	relais_status(relais, &tempStatus);
+	return bt_mesh_onoff_srv_pub(&relais->srv, NULL, &tempStatus);
+}
+
+
+
+
+
 /// @brief schedules the relais toggle
 /// @param relais the relais that should be toggled
 static void relais_transition_start(struct relais_srv_ctx *relais)
@@ -130,10 +144,21 @@ void relais_work(struct k_work *work)
 		relais->value = relais->relais_output(relais->value);
 
 		/* Publish the new value at the end of the transition */
-		struct bt_mesh_onoff_status tempStatus;
-		relais_status(relais, &tempStatus);
-		bt_mesh_onoff_srv_pub(&relais->srv, NULL, &tempStatus);
+		publish_relais_status(relais);
 		LOG_DBG("srv PUB");
 		LOG_INF("Trans work COMPLETED");
 	}
+}
+
+
+
+
+
+void relais_update(struct relais_srv_ctx *ctx, 
+			bool value, 
+			uint32_t remaining_time)
+{
+	ctx->value = value;
+	ctx->remaining = remaining_time;
+	publish_relais_status(ctx);
 }

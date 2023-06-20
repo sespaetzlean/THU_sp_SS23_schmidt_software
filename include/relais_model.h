@@ -49,6 +49,16 @@ void relais_get(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
 /// @param work 
 void relais_work(struct k_work *work);
 
+
+/// @brief function to call when the element was modified from outside, 
+// e.g. due to safety mechanics
+/// @param ctx 
+/// @param value 
+/// @param remaining_time 
+void relais_update(struct relais_srv_ctx *ctx, 
+			bool value, 
+			uint32_t remaining_time);
+
 #ifdef __cplusplus
 }
 #endif

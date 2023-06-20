@@ -5,6 +5,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 
+#include "temperature_watchdog.h"
+
 
 #include "health_model.h"
 #include "relais_model.h"

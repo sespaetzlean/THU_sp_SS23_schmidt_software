@@ -22,6 +22,17 @@ static void create_dimmable_status(const struct dimmable_srv_ctx * d_ctx,
 }
 
 
+/// @brief helper to publish status msg derived from dimmable_srv_ctx
+/// @param d_ctx the dimmable stuct instance
+/// @return return code from bt_mesh_lvl_srv_pub
+static int publish_dimmable_status(struct dimmable_srv_ctx * d_ctx)
+{
+	struct bt_mesh_lvl_status tempStatus;
+	create_dimmable_status(d_ctx, &tempStatus);
+	return bt_mesh_lvl_srv_pub(&d_ctx->srv, NULL, &tempStatus);
+}
+
+
 
 
 
@@ -173,10 +184,7 @@ void dimmable_work(struct k_work * work)
 		//update struct
 		d_ctx->current_lvl = d_ctx->target_lvl;
 		d_ctx->remaining_time = 0;
-		//create appropriate status message & publish
-		struct bt_mesh_lvl_status tempStatus;
-		create_dimmable_status(d_ctx, &tempStatus);
-		bt_mesh_lvl_srv_pub(&d_ctx->srv, NULL, &tempStatus);
+		publish_dimmable_status(d_ctx);
 		LOG_DBG("srv PUB, NO reschedule");
 		LOG_INF("Trans work COMPLETED.");
 	} else {	
@@ -194,6 +202,27 @@ void dimmable_work(struct k_work * work)
 		k_work_reschedule(&d_ctx->work, K_MSEC(d_ctx->time_period));
 	}
 	//set led to new value
-	d_ctx->pwm_output(d_ctx->current_lvl);
+	uint16_t actualValue = d_ctx->pwm_output(d_ctx->current_lvl);
+	if (actualValue != d_ctx->current_lvl) {
+		LOG_ERR("PWM output couldn't be set! STOP work!");
+		d_ctx->current_lvl = actualValue;
+		d_ctx->target_lvl = actualValue;
+		//will stop like this as levels are set equal
+	}
 	LOG_DBG("Cur-lvl set to: %u/65535", d_ctx->current_lvl);
+}
+
+
+
+
+
+void dimmable_update(struct dimmable_srv_ctx *d_srv_ctx, 
+			uint16_t current_lvl, 
+			uint16_t target_lvl, 
+			uint32_t remaining_time)
+{
+	d_srv_ctx->current_lvl = current_lvl;
+	d_srv_ctx->target_lvl = target_lvl;
+	d_srv_ctx->remaining_time = remaining_time;
+	publish_dimmable_status(d_srv_ctx);
 }

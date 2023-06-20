@@ -35,13 +35,27 @@ static void relais_status(const struct relais_srv_ctx *relais,
 
 
 
+/// @brief helper to publish status msg derived from relais_srv_ctx
+/// @param relais 
+/// @return return code from bt_mesh_onoff_srv_pub
+static int publish_relais_status(struct relais_srv_ctx * relais)
+{
+	struct bt_mesh_onoff_status tempStatus;
+	relais_status(relais, &tempStatus);
+	return bt_mesh_onoff_srv_pub(&relais->srv, NULL, &tempStatus);
+}
+
+
+
+
+
 /// @brief schedules the relais toggle
 /// @param relais the relais that should be toggled
 static void relais_transition_start(struct relais_srv_ctx *relais)
 {
 	//exp As long as the transition is in progress, 
 	//exp the onoff state shall be "on"
-	relais->relais_output(true);
+	relais->value = relais->relais_output(true);
 	//the work will be scheduled after the "remaining"-value
 	k_work_reschedule(&relais->work, K_MSEC(relais->remaining));	
 	relais->remaining = 0;		//can be already set to 0.
@@ -76,7 +90,7 @@ void relais_set(struct bt_mesh_onoff_srv *srv, struct bt_mesh_msg_ctx *ctx,
 	if (!bt_mesh_model_transition_time(set->transition)) {
 		//execute instantly if the transition time is 0
 		relais->remaining = 0;
-		relais->relais_output(set->on_off);
+		relais->value = relais->relais_output(set->on_off);
 		goto respond;
 	}
 
@@ -127,13 +141,24 @@ void relais_work(struct k_work *work)
 		relais_transition_start(relais);
 	} else {
 		//set appliance to target value
-		relais->relais_output(relais->value);
+		relais->value = relais->relais_output(relais->value);
 
 		/* Publish the new value at the end of the transition */
-		struct bt_mesh_onoff_status tempStatus;
-		relais_status(relais, &tempStatus);
-		bt_mesh_onoff_srv_pub(&relais->srv, NULL, &tempStatus);
+		publish_relais_status(relais);
 		LOG_DBG("srv PUB");
 		LOG_INF("Trans work COMPLETED");
 	}
+}
+
+
+
+
+
+void relais_update(struct relais_srv_ctx *ctx, 
+			bool value, 
+			uint32_t remaining_time)
+{
+	ctx->value = value;
+	ctx->remaining = remaining_time;
+	publish_relais_status(ctx);
 }

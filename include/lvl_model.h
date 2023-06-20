@@ -34,7 +34,7 @@ struct dimmable_srv_ctx {
 	uint16_t target_lvl;
 	//how fast the light shall be changed (speed depends on time_period)
 	int16_t move_step; 				
-	void (*pwm_output)(uint16_t level);	//function pointer to execute set value
+	uint16_t (*pwm_output)(uint16_t level);	//function pointer to execute set value
 };
 
 /// @brief set state of a dimmable element
@@ -70,6 +70,18 @@ void dimmable_move_set(struct bt_mesh_lvl_srv *srv,
 /// @brief periodically calls itself until target_lvl is reached
 /// @param work 
 void dimmable_work(struct k_work *work);
+
+
+/// @brief function to call when the element was modified from outside, 
+// e.g. due to safety mechanics
+/// @param d_srv_ctx 
+/// @param current_lvl 
+/// @param target_lvl 
+/// @param remaining_time 
+void dimmable_update(struct dimmable_srv_ctx *d_srv_ctx, 
+			uint16_t current_lvl, 
+			uint16_t target_lvl, 
+			uint32_t remaining_time);
 
 #ifdef __cplusplus
 }

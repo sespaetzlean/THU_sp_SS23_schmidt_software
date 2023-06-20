@@ -89,11 +89,13 @@ static int turn_off_all_appliances(const struct temp_watchdog_ctx *temp_ctx)
         {
         case OUTPUT_COMMAND_TYPE_ONOFF:
             cmd_temp->gpio_set(cmd_temp->off_value);
+            cmd_temp->gpio_update(cmd_temp->off_value);
             success_counter++;
             LOG_DBG("Turned relais %d to %d", i, cmd_temp->off_value);
             break;
         case OUTPUT_COMMAND_TYPE_LEVEL:
             cmd_temp->pwm_set(cmd_temp->off_level);
+            cmd_temp->pwm_update(cmd_temp->off_level);
             success_counter++;
             LOG_DBG("Turned dimmer %d to %d", i, cmd_temp->off_level);
             break;

@@ -40,6 +40,13 @@ struct output_command {
         bool (*gpio_set)(bool value);
         uint16_t (*pwm_set)(uint16_t value);
     };
+    // these function pointers shall inform 
+    // the respective structs of the appliances
+    // e.g. when all appliances had to be turned off
+    union {
+        void (*gpio_update)(bool current_value);
+        void (*pwm_update)(uint16_t current_level);
+    };
 };
 
 struct temp_watchdog_ctx {

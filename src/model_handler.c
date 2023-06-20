@@ -30,10 +30,10 @@ static const struct pwm_dt_spec pwm0_spec = PWM_DT_SPEC_GET(DIMMER0_NODE);
 /// @brief wrapper function as this definition is needed 
 /// for the dimmable_srv_ctx struct
 /// @param pwmValue value the led_out shall be set to.
-static void dimmer0_safe_setWrapper(uint16_t pwmValue)
+static uint16_t dimmer0_safe_setWrapper(uint16_t pwmValue)
 {
 	LOG_DBG("called dimmer0_safe_setWrapper with value %d on cmd %d", pwmValue, SET_DIMMER1_CMD_TW);
-	safely_switch_level(&temperature_watchdog, SET_DIMMER1_CMD_TW, pwmValue);
+	return safely_switch_level(&temperature_watchdog, SET_DIMMER1_CMD_TW, pwmValue);
 }
 
 
@@ -250,24 +250,38 @@ static bool execute_relais1_set_wrapper(bool value)
 	return value;
 }
 
+static void update_relais1_state_wrapper(bool current_value)
+{
+	LOG_DBG("update_relais1_state_wrapper: %d", current_value);
+	//TODO: implement
+}
+
 static struct output_command relais1_cmd = {
 	.cmd_type = OUTPUT_COMMAND_TYPE_ONOFF,
 	.off_value = false,
 	.gpio_set = execute_relais1_set_wrapper,
+	.gpio_update = update_relais1_state_wrapper,
 };
 
 // === for level model === //
-static int execute_dimmer1_set_wrapper(uint16_t value)
+static uint16_t execute_dimmer1_set_wrapper(uint16_t value)
 {
 	LOG_DBG("execute_dimmer1_set_wrapper: %d", value);
 	lc_pwm_output_set(&pwm0_spec, value);
-	return 0;
+	return value;
+}
+
+static void update_dimmer1_state_wrapper(uint16_t current_level)
+{
+	LOG_DBG("update_dimmer1_state_wrapper: %d", current_level);
+	dimmable_update(&myDimmable_ctx, current_level, current_level, 0);
 }
 
 static struct output_command dimmer1_cmd = {
 	.cmd_type = OUTPUT_COMMAND_TYPE_LEVEL,
 	.off_level = 0,
 	.pwm_set = execute_dimmer1_set_wrapper,
+	.pwm_update = update_dimmer1_state_wrapper,
 };
 
 

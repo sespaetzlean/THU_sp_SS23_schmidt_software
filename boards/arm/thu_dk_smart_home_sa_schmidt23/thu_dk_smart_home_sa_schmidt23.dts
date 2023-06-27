@@ -1,0 +1,131 @@
+// Copyright (c) 2023 Nordic Semiconductor ASA
+// SPDX-License-Identifier: Apache-2.0
+
+/dts-v1/;
+#include <nordic/nrf52832_qfaa.dtsi>
+#include "thu_dk_smart_home_sa_schmidt23-pinctrl.dtsi"
+
+/ {
+	model = "THU dk smartHome Schmidt23 sa ";
+	compatible = "thu,thu-dk-smart-home-sa-schmidt23";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+
+	//TODO: maybe rename to outputs later
+	leds {
+		compatible = "gpio-leds";
+		infoled0: info_led0 {
+			//TODO: select right gpio
+			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			label = "Blue info LED on top of device";
+		};
+		warnled1: warn_led1 {
+			//TODO: select right gpio
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			label = "Yellow warning LED on top of device";
+		};
+		relaisout0: relais_output0 {
+			//TODO: select right gpio
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "Relais 0 for switching 230V 16A";
+		};
+		dcdcen: dcdc_enable {
+			//TODO: select right gpio
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			label = "output that always enables the DCDC converter for the power supply";
+		};
+	};
+
+
+	pwmoutputs {
+		compatible = "pwm-leds";
+		pwm_output0: pwm_output_0 {
+			//TODO: select right pin
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM output 0 for dimming 230V";
+		};
+	};
+
+
+	buttons {
+		compatible = "gpio-keys";
+		button230v0a: button_230v_0_a {
+			//TODO: select right pin
+			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "button input for 230V connected to 0a";
+		};
+		button230v0b: button_230v_0_b {
+			//TODO: select right pin
+			gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "button input for 230V connected to 0b";
+		};
+	};
+
+
+	aliases {
+		led0 = &infoled0;
+		led1 = &warnled1;
+		relaisout0 = &relaisout0;
+		dcdcen = &dcdcen;
+		pwm-output0 = &pwm_output0;
+		button230v0a = &button230v0a;
+		button230v0b = &button230v0b;
+		// bootloader-led0 = &infoled0;
+		// mcuboot-button0 = &button230v0a;
+		// mcuboot-led0 = &infoled0;
+		// watchdog0 = &wdt0;
+	};
+};
+
+
+
+
+
+
+//for the leds branch:
+&gpio0 {
+	status = "okay";
+};
+
+//for the pwm outputs branch:
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0xc000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x3e000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x70000 0xa000>;
+		};
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x7a000 0x6000>;
+		};
+	};
+};
+

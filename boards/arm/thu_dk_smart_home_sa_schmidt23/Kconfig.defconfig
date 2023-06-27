@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_THU_DK_SMART_HOME_SA_SCHMIDT23
+
+config BOARD
+	default "thu_dk_smart_home_sa_schmidt23"
+
+config BT_CTLR
+   default BT
+
+endif

@@ -1,0 +1,6 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_THU_DK_SMART_HOME_SA_SCHMIDT23
+	bool "THU dk smartHome Schmidt23 sa "
+	depends on SOC_NRF52832_QFAA

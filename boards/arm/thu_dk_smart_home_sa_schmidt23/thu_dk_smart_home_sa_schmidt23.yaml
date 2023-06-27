@@ -1,0 +1,18 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: thu_dk_smart_home_sa_schmidt23
+name: THU dk smartHome Schmidt23 sa 
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+  supported:
+  - adc
+  - gpio
+  - pwm
+  - watchdog

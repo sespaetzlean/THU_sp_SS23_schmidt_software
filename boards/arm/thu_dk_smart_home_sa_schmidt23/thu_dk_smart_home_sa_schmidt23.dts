@@ -6,7 +6,7 @@
 #include "thu_dk_smart_home_sa_schmidt23-pinctrl.dtsi"
 
 / {
-	model = "THU dk smartHome Schmidt23 sa ";
+	model = "THU dk smartHome Schmidt23 sa";
 	compatible = "thu,thu-dk-smart-home-sa-schmidt23";
 
 	chosen {

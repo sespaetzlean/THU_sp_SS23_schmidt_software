@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: thu_dk_smart_home_sa_schmidt23
-name: THU dk smartHome Schmidt23 sa 
+name: THU dk smartHome Schmidt23 sa
 type: mcu
 arch: arm
 ram: 64

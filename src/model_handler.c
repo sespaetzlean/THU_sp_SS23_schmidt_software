@@ -70,14 +70,6 @@ static const struct gpio_dt_spec sw0_spec = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 #endif
 static struct gpio_callback sw0_cb_data;
 
-#define SW1_NODE     DT_ALIAS(sw1)
-#if DT_NODE_HAS_STATUS(SW1_NODE, okay)
-static const struct gpio_dt_spec sw1_spec = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
-#else
-#error "Unsupported board: sw1 devicetree alias is not defined"
-#endif
-static struct gpio_callback sw1_cb_data;
-
 #define SW2_NODE     DT_ALIAS(dimmonoffbuttonrisingedge)
 #if DT_NODE_HAS_STATUS(SW2_NODE, okay)
 static const struct gpio_dt_spec sw2_spec = GPIO_DT_SPEC_GET(SW2_NODE, gpios);
@@ -202,14 +194,6 @@ static struct onOff_dim_decider_data decider_data;
 static struct dimmable_cli_ctx level0_ctr = {
 	.client = BT_MESH_LVL_CLI_INIT(&level_status_handler),
 };
-
-static void sw1_risingEdge_cb(const struct device *port,
-			struct gpio_callback *cb,
-			gpio_port_pins_t pins)
-{
-	LOG_DBG("Callback of %s button rising edge activated", port->name);
-	move_level(&level0_ctr, 0, 0, 0);
-}
 
 
 // ! for implementation of dim_decider !
@@ -389,12 +373,6 @@ const struct bt_mesh_comp *model_handler_init(void)
 		GPIO_INT_EDGE_TO_ACTIVE, 
 		&sw0_cb_data, 
 		button0_risingEdge_cb));
-
-	err += abs(single_device_init(sw1_spec.port));	//gpio in pin
-	err += abs(configure_gpi_interrupt(&sw1_spec, 
-		GPIO_INT_EDGE_TO_ACTIVE, 
-		&sw1_cb_data, 
-		sw1_risingEdge_cb));
 
 	err += abs(single_device_init(sw2_spec.port));	//gpio in pin
 	err += abs(configure_gpi_interrupt(&sw2_spec, 

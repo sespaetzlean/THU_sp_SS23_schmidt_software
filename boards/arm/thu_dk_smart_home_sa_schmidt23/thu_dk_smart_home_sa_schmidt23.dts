@@ -21,22 +21,22 @@
 		compatible = "gpio-leds";
 		infoled0: info_led0 {
 			//TODO: select right gpio
-			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 			label = "Blue info LED on top of device";
 		};
 		warnled1: warn_led1 {
 			//TODO: select right gpio
-			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 			label = "Yellow warning LED on top of device";
 		};
 		relaisout0: relais_output0 {
 			//TODO: select right gpio
-			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 			label = "Relais 0 for switching 230V 16A";
 		};
 		dcdcen: dcdc_enable {
 			//TODO: select right gpio
-			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 			label = "output that always enables the DCDC converter for the power supply";
 		};
 	};
@@ -61,12 +61,12 @@
 		};
 		button230v0b: button_230v_0_b {
 			//TODO: select right pin
-			gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "button input for 230V connected to two inputs (ob)";
 		};
 		button230v1: button_230v_1 {
 			//TODO: select right pin
-			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "button input for 230V connected to one input (1)";
 		};
 	};
@@ -91,7 +91,6 @@
 		infogreenled = &infoled0;
 		relaisoutput = &relaisout0;
 		dimmeroutput = &pwm_output0;
-		//dcdcen = &dcdcen; // already in .dts
 		//inputs
 		relaistogglebutton = &button230v1;
 		dimmonoffbuttonrisingedge = &button230v0a;
@@ -100,7 +99,13 @@
 	};
 };
 
+&adc {
+	status = "okay";
+};
 
+&gpiote {
+	status = "okay";
+};
 
 
 

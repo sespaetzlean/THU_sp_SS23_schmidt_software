@@ -19,7 +19,6 @@ static void light_transition_start(const struct bt_mesh_lightness_set *set, stru
 	l_ctx->time_period = (step_cnt ? time / step_cnt : 0);
 	l_ctx->remaining_time = time;
 
-	//TODO: check for this bug
 	//to remove app bug that does not update state, also set current_lvl to target_lvl if time & delay is 0
 	//exp: this is because the app does show the current_lvl instead of the target level when delay & time is 0
 	// if(!time && !delay)

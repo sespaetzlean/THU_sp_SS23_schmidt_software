@@ -297,17 +297,16 @@ void onOff_dim_decider_released(struct onOff_dim_decider_data *data)
 	//check when button was pressed
 	int64_t time_pressed = k_uptime_delta(&data->timestamp) + 10;		
 	//+ 10 ms to be sure work did not start yet
-	//TODO: remove 0
-	LOG_DBG("Button %d was pressed for %lld ms", 0, time_pressed);
+	LOG_DBG("Button was pressed for %lld ms", time_pressed);
 	if(time_pressed < TIME_ONOFF_DIM_DECIDE_4_DIM) {
 		k_work_cancel_delayable(&data->dec_work);
-		//TODO: check return code
 		toggle_lvl_onOff(data, NULL);
 	} else {
 		//stop moving
 		/**
 		 * here, always the acknowledged command shall be executed
-		 * This is needed as for the next operation, the helper struct has to know the current values
+		 * This is needed as for the next operation, 
+		 * the helper struct has to know the current values
 		 * in order to decide on the right next action
 		 * ! This may lead to a lot of ack messages if the group is large !
 		 */
@@ -320,7 +319,7 @@ void onOff_dim_decider_released(struct onOff_dim_decider_data *data)
 			.transition = &tempTran,
 		};
 		LOG_DBG("Move stopped with ACK-com");
-		bt_mesh_lvl_cli_move_set(&data->client_ctx->client, NULL, &tempSet, NULL);
-		//TODO: check return code
+		bt_mesh_lvl_cli_move_set(&data->client_ctx->client, 
+			NULL, &tempSet, NULL);
 	}
 }

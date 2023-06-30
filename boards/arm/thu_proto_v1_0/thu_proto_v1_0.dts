@@ -52,19 +52,12 @@
 	buttons {
 		compatible = "gpio-keys";
 		button230v0a: button_230v_0_a {
-			//TODO: select right pin
 			gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "button input for 230V connected to two inputs (0a)";
 		};
 		button230v0b: button_230v_0_b {
-			//TODO: select right pin
 			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "button input for 230V connected to two inputs (ob)";
-		};
-		button230v1: button_230v_1 {
-			//TODO: select right pin
-			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "button input for 230V connected to one input (1)";
 		};
 	};
 
@@ -78,7 +71,6 @@
 		pwm-output0 = &pwm_output0;
 		button230v0a = &button230v0a;
 		button230v0b = &button230v0b;
-		button230v1 = &button230v1;
 		bootloader-led0 = &infoled0;
 		mcuboot-button0 = &button230v0a;
 		mcuboot-led0 = &infoled0;
@@ -86,12 +78,14 @@
 		//added for Hausautomatisierung
 		//outputs
 		healthinfoled = &warnled1;
-		relaisoutput = &relaisout0set;	//TODO: ist das Relais, keine led -> nur Impulse
+		relaisoutput = &relaisout0set;
 		relaiscloseoutput = &relaisout0set;
 		relaisopenoutput = &relaisout0reset;
 		dimmeroutput = &pwm_output0;
 		//inputs
-		relaistogglebutton = &button230v1;
+		relaistogglebutton = &button230v0a;
+		relaisleverrisingedge = &button230v0a;
+		relaisleverfallingedge = &button230v0b;
 		dimmonoffbuttonrisingedge = &button230v0a;
 		dimmonoffbuttonfallingedge = &button230v0b;
 		// end of Hausautomatisierung

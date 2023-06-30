@@ -3,11 +3,24 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
 
-// #define __DEV_KIT
-#define __THU_PCB
+//exp: choose relais type
+// #define __MONOSTABLE_RELAIS
+#define __BISTABLE_RELAIS
 
-#if defined __DEV_KIT && defined __THU_PCB
-#error "Only one board can be defined"
+//exp: choose type of button: button / lever 
+//exp: & if relais or dimmer shall be controlled
+// #define __DIMM_CTR_BY_BUTTON
+#define __RELAIS_CTR_BY_BUTTON
+// #define __RELAIS_CTR_BY_LEVER
+
+
+
+#if defined __MONOSTABLE_RELAIS && defined __BISTABLE_RELAIS
+#error "Only one relais type shall be defined"
+#endif
+
+#if defined __RELAIS_CTR_BY_LEVER && defined __RELAIS_CTR_BY_BUTTON
+#error "Only one type of button shall be defined"
 #endif
 
 // ===================== temperature watchdog ====================== //
@@ -53,7 +66,7 @@ static const struct gpio_dt_spec out1_setTog_spec =
 #error "Unsupported board: relaiscloseoutput devicetree alias is not defined"
 #endif
 
-#if defined __THU_PCB
+#if defined __BISTABLE_RELAIS
 	#define RELAIS1_NODE_UNSET    DT_ALIAS(relaisopenoutput)
 	#if DT_NODE_HAS_STATUS(RELAIS1_NODE_UNSET, okay)
 	static const struct gpio_dt_spec out1_unset_spec = 
@@ -81,30 +94,57 @@ static bool relais1_safe_setWrapper(const bool onOff_value)
 
 
 // === gpio in definition with interrupt === //
-#define SW0_NODE     DT_ALIAS(relaistogglebutton)
-#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
-static const struct gpio_dt_spec sw0_spec = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
-#else
-#error "Unsupported board: relaistogglebutton devicetree alias is not defined"
-#endif
-static struct gpio_callback sw0_cb_data;
+#if defined __DIMM_CTR_BY_BUTTON
+	//!same input needs to be connected to both of these pins
+	#define IN0_A_NODE     DT_ALIAS(dimmonoffbuttonrisingedge)
+	#if DT_NODE_HAS_STATUS(IN0_A_NODE, okay)
+	static const struct gpio_dt_spec input0a_spec = 
+		GPIO_DT_SPEC_GET(IN0_A_NODE, gpios);
+	#else
+	#error "Unsupported board: dimmonoffbuttonrisingedge devicetree alias is not defined"
+	#endif
+	static struct gpio_callback input0a_cb_data;
 
-#define SW2_NODE     DT_ALIAS(dimmonoffbuttonrisingedge)
-#if DT_NODE_HAS_STATUS(SW2_NODE, okay)
-static const struct gpio_dt_spec sw2_spec = GPIO_DT_SPEC_GET(SW2_NODE, gpios);
-#else
-#error "Unsupported board: dimmonoffbuttonrisingedge devicetree alias is not defined"
+	#define IN0_B_NODE     DT_ALIAS(dimmonoffbuttonfallingedge)
+	#if DT_NODE_HAS_STATUS(IN0_B_NODE, okay)
+	static const struct gpio_dt_spec input0b_spec = 
+		GPIO_DT_SPEC_GET(IN0_B_NODE, gpios);
+	#else
+	#error "Unsupported board: dimmonoffbuttonfallingedge devicetree alias is not defined"
+	#endif
+	static struct gpio_callback input0b_cb_data;
 #endif
-static struct gpio_callback sw2_cb_data;
 
-#define SW3_NODE     DT_ALIAS(dimmonoffbuttonfallingedge)
-#if DT_NODE_HAS_STATUS(SW3_NODE, okay)
-static const struct gpio_dt_spec sw3_spec = GPIO_DT_SPEC_GET(SW3_NODE, gpios);
-#else
-#error "Unsupported board: dimmonoffbuttonfallingedge devicetree alias is not defined"
+// ===
+#if defined __RELAIS_CTR_BY_LEVER
+	//!same input needs to be connected to both of these pins
+	#define IN1_A_NODE     DT_ALIAS(relaisleverrisingedge)
+	#if DT_NODE_HAS_STATUS(IN1_A_NODE, okay)
+	static const struct gpio_dt_spec input1a_spec = 
+		GPIO_DT_SPEC_GET(IN1_A_NODE, gpios);
+	#else
+	#error "Unsupported board: dimmonoffbuttonrisingedge devicetree alias is not defined"
+	#endif
+	static struct gpio_callback input1a_cb_data;
+
+	#define IN1_B_NODE     DT_ALIAS(relaisleverfallingedge)
+	#if DT_NODE_HAS_STATUS(IN1_B_NODE, okay)
+	static const struct gpio_dt_spec input1b_spec = 
+		GPIO_DT_SPEC_GET(IN1_B_NODE, gpios);
+	#else
+	#error "Unsupported board: dimmonoffbuttonfallingedge devicetree alias is not defined"
+	#endif
+	static struct gpio_callback input1b_cb_data;
+#elif defined __RELAIS_CTR_BY_BUTTON
+	#define IN2_NODE     DT_ALIAS(relaistogglebutton)
+	#if DT_NODE_HAS_STATUS(IN2_NODE, okay)
+	static const struct gpio_dt_spec input2_spec = 
+		GPIO_DT_SPEC_GET(IN2_NODE, gpios);
+	#else
+	#error "Unsupported board: relaistogglebutton devicetree alias is not defined"
+	#endif
+	static struct gpio_callback input2_cb_data;
 #endif
-static struct gpio_callback sw3_cb_data;
-
 
 
 
@@ -170,7 +210,7 @@ static struct relais_cli_ctx relais0_ctr = {
 /// @param port 
 /// @param cb 
 /// @param pins 
-static void button0_risingEdge_cb(const struct device *port,
+static void relais0_button_risEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
@@ -182,7 +222,7 @@ static void button0_risingEdge_cb(const struct device *port,
 /// @param port 
 /// @param cb 
 /// @param pins 
-static void lever_risingEdge_cb(const struct device *port,
+static void relais0_lever_risEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
@@ -193,7 +233,7 @@ static void lever_risingEdge_cb(const struct device *port,
 /// @param port 
 /// @param cb 
 /// @param pins 
-static void lever_fallingEdge_cb(const struct device *port,
+static void relais0_lever_falEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
@@ -214,7 +254,7 @@ static struct dimmable_cli_ctx level0_ctr = {
 
 
 // ! for implementation of dim_decider !
-static void sw2_risingEdge_cb(const struct device *port,
+static void dimDcdr_risEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
@@ -222,7 +262,7 @@ static void sw2_risingEdge_cb(const struct device *port,
 	onOff_dim_decider_pressed(&decider_data);
 }
 
-static void sw3_fallingEdge_cb(const struct device *port,
+static void dimDcdr_falEdge_cb(const struct device *port,
 			struct gpio_callback *cb,
 			gpio_port_pins_t pins)
 {
@@ -240,7 +280,8 @@ static void sw3_fallingEdge_cb(const struct device *port,
 static bool execute_relais1_set_wrapper(bool value)
 {
 	LOG_DBG("execute_relais1_set_wrapper: %d", value);
-	#if defined __DEV_KIT
+	//monostable and bistable relais types are controlled differently
+	#if defined __MONOSTABLE_RELAIS
 		if(value) 
 		{
 			gpio_pin_set_dt(&out1_setTog_spec, 1);
@@ -248,7 +289,7 @@ static bool execute_relais1_set_wrapper(bool value)
 		else {
 			gpio_pin_set_dt(&out1_setTog_spec, 0);
 		}
-	#elif defined __THU_PCB
+	#elif defined __BISTABLE_RELAIS
 		if(value) 
 		{
 			gpio_pin_set_dt(&out1_setTog_spec, 1);
@@ -403,29 +444,41 @@ const struct bt_mesh_comp *model_handler_init(void)
 	//gpio out pins
 	err += abs(single_device_init(out1_setTog_spec.port));	//gpio out pin
 	err += abs(gpio_pin_configure_dt(&out1_setTog_spec, GPIO_OUTPUT_INACTIVE));
-#if defined __THU_PCB
+#if defined __BISTABLE_RELAIS
 	err += abs(single_device_init(out1_unset_spec.port));	//gpio out pin
 	err += abs(gpio_pin_configure_dt(&out1_unset_spec, GPIO_OUTPUT_INACTIVE));
-#endif //ifdef __THU_PCB
+#endif //ifdef __BISTABLE_RELAIS
 
 	//gpio in pins
-	err += abs(single_device_init(sw0_spec.port));	//gpio in pin
-	err += abs(configure_gpi_interrupt(&sw0_spec, 
+#if defined __DIMM_CTR_BY_BUTTON
+	err += abs(single_device_init(input0a_spec.port));	//gpio in pin
+	err += abs(configure_gpi_interrupt(&input0a_spec, 
 		GPIO_INT_EDGE_TO_ACTIVE, 
-		&sw0_cb_data, 
-		button0_risingEdge_cb));
-
-	//!same button needs to be connected to both of these pins
-	err += abs(single_device_init(sw2_spec.port));	//gpio in pin
-	err += abs(configure_gpi_interrupt(&sw2_spec, 
-		GPIO_INT_EDGE_TO_ACTIVE, 
-		&sw2_cb_data, 
-		sw2_risingEdge_cb));
-	err += abs(single_device_init(sw3_spec.port));	//gpio in pin
-	err += abs(configure_gpi_interrupt(&sw3_spec, 
+		&input0a_cb_data, 
+		dimDcdr_risEdge_cb));
+	err += abs(single_device_init(input0b_spec.port));	//gpio in pin
+	err += abs(configure_gpi_interrupt(&input0b_spec, 
 		GPIO_INT_EDGE_TO_INACTIVE, 
-		&sw3_cb_data, 
-		sw3_fallingEdge_cb));		
+		&input0b_cb_data, 
+		dimDcdr_falEdge_cb));
+#endif //ifdef __DIMM_CTR_BY_BUTTON
+#if defined __RELAIS_CTR_BY_BUTTON
+	err += abs(configure_gpi_interrupt(&input2_spec, 
+		GPIO_INT_EDGE_TO_ACTIVE, 
+		&input2_cb_data, 
+		relais0_button_risEdge_cb));
+#elif defined __RELAIS_CTR_BY_LEVER
+	err += abs(single_device_init(input1a_spec.port));	//gpio in pin
+	err += abs(configure_gpi_interrupt(&input1a_spec, 
+		GPIO_INT_EDGE_TO_ACTIVE, 
+		&input1a_cb_data, 
+		relais0_lever_risEdge_cb));
+	err += abs(single_device_init(input1b_spec.port));	//gpio in pin
+	err += abs(configure_gpi_interrupt(&input1b_spec, 
+		GPIO_INT_EDGE_TO_INACTIVE, 
+		&input1b_cb_data, 
+		relais0_lever_falEdge_cb));
+#endif //relais input type
 
 	if (0 != err) {
 		LOG_ERR("Error during GPIO-initialization");

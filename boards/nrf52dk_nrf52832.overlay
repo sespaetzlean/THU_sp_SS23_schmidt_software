@@ -13,6 +13,8 @@
 		dcdcen = &led2;
 		//inputs
 		relaistogglebutton = &button0;
+		relaisleverrisingedge = &button0;
+		relaisleverfallingedge = &button1;
 		dimmonoffbuttonrisingedge = &button2;
 		dimmonoffbuttonfallingedge = &button3;
 		// end of Hausautomatisierung

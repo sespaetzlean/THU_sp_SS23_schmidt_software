@@ -3,6 +3,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
 
+// #define __DEV_KIT
+#define __THU_PCB
+
+#if defined __DEV_KIT && defined __THU_PCB
+#error "Only one board can be defined"
+#endif
 
 // ===================== temperature watchdog ====================== //
 
@@ -18,46 +24,59 @@ extern struct temp_watchdog_ctx temperature_watchdog;
 // ============================= IO definitions ============================= //
 // === pwm definitions === //
 #define DIMMER0_NODE	DT_ALIAS(dimmeroutput)
-
-
 #if DT_NODE_HAS_STATUS(DIMMER0_NODE, okay)
 static const struct pwm_dt_spec pwm0_spec = PWM_DT_SPEC_GET(DIMMER0_NODE);
 #else
 #error "Unsupported board: dimmer-output devicetree alias is not defined"
 #endif
 
-
 /// @brief wrapper function as this definition is needed 
 /// for the dimmable_srv_ctx struct
 /// @param pwmValue value the led_out shall be set to.
 static uint16_t dimmer0_safe_setWrapper(uint16_t pwmValue)
 {
-	LOG_DBG("called dimmer0_safe_setWrapper with value %d on cmd %d", pwmValue, SET_DIMMER1_CMD_TW);
+	LOG_DBG("called dimmer0_safe_setWrapper with value %d on cmd %d", 
+		pwmValue, SET_DIMMER1_CMD_TW);
 	return safely_switch_level(&temperature_watchdog, SET_DIMMER1_CMD_TW, pwmValue);
 }
 
 
 
-// === gpio out definition === //
-#define RELAIS1_NODE    DT_ALIAS(relaisoutput)
 
-#if DT_NODE_HAS_STATUS(RELAIS1_NODE, okay)
-static const struct gpio_dt_spec led1_spec = GPIO_DT_SPEC_GET(RELAIS1_NODE, gpios);
+
+// === gpio out definition === //
+#define RELAIS1_NODE_SET    DT_ALIAS(relaiscloseoutput)
+#if DT_NODE_HAS_STATUS(RELAIS1_NODE_SET, okay)
+static const struct gpio_dt_spec out1_setTog_spec = 
+	GPIO_DT_SPEC_GET(RELAIS1_NODE_SET, gpios);
 #else
-#error "Unsupported board: relaisoutput devicetree alias is not defined"
+#error "Unsupported board: relaiscloseoutput devicetree alias is not defined"
 #endif
 
+#if defined __THU_PCB
+	#define RELAIS1_NODE_UNSET    DT_ALIAS(relaisopenoutput)
+	#if DT_NODE_HAS_STATUS(RELAIS1_NODE_UNSET, okay)
+	static const struct gpio_dt_spec out1_unset_spec = 
+		GPIO_DT_SPEC_GET(RELAIS1_NODE_UNSET, gpios);
+	#else
+	#error "Unsupported board: relaisopenoutput devicetree alias is not defined"
+	#endif
+#endif
 
 /// @brief wrapper function as this definition is needed 
 /// for the relais_srv_ctx struct
 /// @param onOff_value true = on, false = off
 static bool relais1_safe_setWrapper(const bool onOff_value)
 {
-	LOG_DBG("called relais1_safe_setWrapper with value %d on cmd %d", onOff_value, SWITCH_RELAIS1_CMD_TW);
+	LOG_DBG("called relais1_safe_setWrapper with value %d on cmd %d", 
+		onOff_value, 
+		SWITCH_RELAIS1_CMD_TW);
 	return safely_switch_onOff(&temperature_watchdog, 
 		SWITCH_RELAIS1_CMD_TW, 
 		onOff_value);
 }
+
+
 
 
 
@@ -90,11 +109,9 @@ static struct gpio_callback sw3_cb_data;
 
 
 
+// ========================================================================== //
 // ============================= model definitions ========================== //
-
-
-
-
+// ========================================================================== //
 
 // ===================== relais initializations ==============================//
 static const struct bt_mesh_onoff_srv_handlers onoff_handlers = {
@@ -212,7 +229,6 @@ static void sw3_fallingEdge_cb(const struct device *port,
 	LOG_DBG("Callback of %s button falling edge activated", port->name);
 	onOff_dim_decider_released(&decider_data);
 }
-
 // !ending implementation of dim_decider !
 
 
@@ -224,13 +240,29 @@ static void sw3_fallingEdge_cb(const struct device *port,
 static bool execute_relais1_set_wrapper(bool value)
 {
 	LOG_DBG("execute_relais1_set_wrapper: %d", value);
-	if(value) 
-	{
-		gpio_pin_set_dt(&led1_spec, 1);
-	}
-	else {
-		gpio_pin_set_dt(&led1_spec, 0);
-	}
+	#if defined __DEV_KIT
+		if(value) 
+		{
+			gpio_pin_set_dt(&out1_setTog_spec, 1);
+		}
+		else {
+			gpio_pin_set_dt(&out1_setTog_spec, 0);
+		}
+	#elif defined __THU_PCB
+		if(value) 
+		{
+			gpio_pin_set_dt(&out1_setTog_spec, 1);
+			k_msleep(25);
+			gpio_pin_set_dt(&out1_setTog_spec, 0);
+		}
+		else {
+			gpio_pin_set_dt(&out1_unset_spec, 1);
+			k_msleep(25);
+			gpio_pin_set_dt(&out1_unset_spec, 0);
+		}
+	#else
+		#error "The board type has not been defined"
+	#endif
 	return value;
 }
 
@@ -276,8 +308,9 @@ static struct output_command dimmer1_cmd = {
 
 
 
-
-// =================================== health service ======================= //		
+// ========================================================================== //
+// ==================== health service ====================================== //
+// ========================================================================== //
 
 static const struct bt_mesh_health_srv_cb health_srv_cb = {
 	.attn_on = attention_on,
@@ -325,12 +358,15 @@ static struct bt_mesh_model std_lightness_models[] = {
 static struct bt_mesh_model relais_sensor_models[] = {
 	BT_MESH_MODEL_ONOFF_CLI(&relais0_ctr.client),
 };
+
 static struct bt_mesh_model level_sensor_models[] = {
 	BT_MESH_MODEL_LVL_CLI(&level0_ctr.client),
 };
 
 
 
+
+// === Put all models together ... === ///
 //exp: insert all elements the node consists of
 //location descriptor is used to number the elements 
 //in case there are multiple elements of same kind
@@ -364,22 +400,27 @@ const struct bt_mesh_comp *model_handler_init(void)
 	//init IO first
 	err += abs(single_device_init(pwm0_spec.dev));	//pwm out pin
 
-	err += abs(single_device_init(led1_spec.port));	//gpio out pin
-	//gpio out pin
-	err += abs(gpio_pin_configure_dt(&led1_spec, GPIO_OUTPUT_INACTIVE));	
-	
+	//gpio out pins
+	err += abs(single_device_init(out1_setTog_spec.port));	//gpio out pin
+	err += abs(gpio_pin_configure_dt(&out1_setTog_spec, GPIO_OUTPUT_INACTIVE));
+#if defined __THU_PCB
+	err += abs(single_device_init(out1_unset_spec.port));	//gpio out pin
+	err += abs(gpio_pin_configure_dt(&out1_unset_spec, GPIO_OUTPUT_INACTIVE));
+#endif //ifdef __THU_PCB
+
+	//gpio in pins
 	err += abs(single_device_init(sw0_spec.port));	//gpio in pin
 	err += abs(configure_gpi_interrupt(&sw0_spec, 
 		GPIO_INT_EDGE_TO_ACTIVE, 
 		&sw0_cb_data, 
 		button0_risingEdge_cb));
 
+	//!same button needs to be connected to both of these pins
 	err += abs(single_device_init(sw2_spec.port));	//gpio in pin
 	err += abs(configure_gpi_interrupt(&sw2_spec, 
 		GPIO_INT_EDGE_TO_ACTIVE, 
 		&sw2_cb_data, 
 		sw2_risingEdge_cb));
-	//!!! short P0.15 & P0.16 for this!!!
 	err += abs(single_device_init(sw3_spec.port));	//gpio in pin
 	err += abs(configure_gpi_interrupt(&sw3_spec, 
 		GPIO_INT_EDGE_TO_INACTIVE, 

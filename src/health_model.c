@@ -4,12 +4,12 @@
 LOG_MODULE_REGISTER(att_mod,LOG_LEVEL_DBG);
 
 
-#define INFO_LED_NODE    DT_ALIAS(infogreenled)
+#define INFO_LED_NODE    DT_ALIAS(healthinfoled)
 
 #if DT_NODE_HAS_STATUS(INFO_LED_NODE, okay)
 static const struct gpio_dt_spec info_led_spec = GPIO_DT_SPEC_GET(INFO_LED_NODE, gpios);
 #else
-#error "Unsupported board: infogreenled devicetree alias is not defined"
+#error "Unsupported board: healthinfoled devicetree alias is not defined"
 #endif
 
 

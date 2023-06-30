@@ -60,6 +60,12 @@ struct temp_watchdog_ctx {
     struct k_work_delayable work;
     //array of all output commands that shall be affected when overheating occurs
     struct output_command* output_commands[NUMBER_OF_OUTPUTS];
+    //functions to execute when overheating occurred ...
+    void (*notify_overheating)(void);
+    // .. and chip cooled down again
+    void (*notify_normalized)(void);
+    // store if currently overheated
+    bool overheated;
 };
 
 
@@ -68,7 +74,9 @@ struct temp_watchdog_ctx {
 /// @param fetch_temp function that returns the current temperature
 /// @return 0 on success
 int init_temperature_watchdog(struct temp_watchdog_ctx *temp_ctx, 
-            int16_t (*fetch_temp)(void));
+            int16_t (*fetch_temp)(void),
+            void (*notify_overheat)(void), 
+            void (*notify_ok)(void));
 
 
 /// @brief wrapper function that only switches appliance on or off 

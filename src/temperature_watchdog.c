@@ -99,7 +99,6 @@ static int turn_off_all_appliances(const struct temp_watchdog_ctx *temp_ctx)
             success_counter++;
             LOG_DBG("Turned dimmer %d to %d", i, cmd_temp->off_level);
             break;
-        //TODO: add other command types if introduced
         default:
             LOG_ERR("Error emergency turn off. Cmd type for cmd %d was not found, appliance could not be turned off!!!", i);
             break;
@@ -122,10 +121,26 @@ static void temp_watchdog_work(struct k_work *work)
     //fetch temperature
     fetch_temp_and_time(ctx);
 
-    //compare to threshold
-    if(!proof_legal_temperature(ctx)) {
-        LOG_INF("All appliances will be turned off");
-        turn_off_all_appliances(ctx);
+    //if currently overheated -> check if temperature is normalized and notify
+    // ---
+    //if currently not overheated -> check if temperature is too high, notify
+    // and turn all appliances of
+    bool temperatureOK = proof_legal_temperature(ctx);
+    if(true == ctx->overheated){
+        if(temperatureOK){
+            ctx->notify_normalized();
+            ctx->overheated = false;
+        } else {
+            LOG_DBG("Temperature is still too high");
+        }
+    } else {    //in past not overheated
+        if(!temperatureOK){
+            ctx->notify_overheating();
+            ctx->overheated = true;
+            LOG_INF("All appliances will be turned off");
+            turn_off_all_appliances(ctx);
+        }
+        // everything ok, no need to take action
     }
 
     //reschedule work
@@ -139,11 +154,16 @@ static void temp_watchdog_work(struct k_work *work)
 // ==================== public functions ==================================== //
 
 int init_temperature_watchdog(struct temp_watchdog_ctx *temp_ctx, 
-            int16_t (*fetch_temp)(void))
+            int16_t (*fetch_temp)(void), 
+            void (*notify_overheat)(void), 
+            void (*notify_ok)(void))
 {
     temp_ctx->fetch_temperature = fetch_temp;
     k_work_init_delayable(&temp_ctx->work, temp_watchdog_work);
     k_work_reschedule(&temp_ctx->work, K_NO_WAIT);
+    temp_ctx->notify_overheating = notify_overheat;
+    temp_ctx->notify_normalized = notify_ok;
+    temp_ctx->overheated = false;
     LOG_INF("Initialized temperature watchdog");
     return 0;
 }

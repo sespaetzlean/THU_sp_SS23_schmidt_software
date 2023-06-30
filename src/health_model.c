@@ -34,7 +34,7 @@ static void attention_blink(struct k_work *work)
 void attention_on(struct bt_mesh_model *mod)
 {
 	attention = true;
-	LOG_WRN("Ready to provision!");
+	LOG_WRN("Attention!");
 	k_work_reschedule(&attention_blink_work, K_NO_WAIT);
 }
 

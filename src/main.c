@@ -7,6 +7,7 @@
 #include <zephyr/drivers/hwinfo.h>
 #include "gpio_pwm_helpers.h"
 #include "temperature_watchdog.h"
+#include "health_model.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(MAIN,LOG_LEVEL_DBG);
@@ -42,6 +43,18 @@ static struct adc_channel_ctx adc_ctx;
 
 //instance of temperature watchdog
 struct temp_watchdog_ctx temperature_watchdog;
+
+//wrappers for notification functions
+void temp_watchdog_notify_overheating(void)
+{
+	attention_on(NULL);
+	LOG_DBG("Send notification about overheating");
+}
+void temp_watchdog_notify_ok(void)
+{
+	attention_off(NULL);
+	LOG_DBG("Send notification about normalized temperature");
+}
 
 
 
@@ -146,7 +159,9 @@ void main(void)
 		return;
 	}
 	err = init_temperature_watchdog(&temperature_watchdog, 
-		readTemperatureFromADC_wrapper);
+		readTemperatureFromADC_wrapper,
+		temp_watchdog_notify_overheating,
+		temp_watchdog_notify_ok);
 
 
 

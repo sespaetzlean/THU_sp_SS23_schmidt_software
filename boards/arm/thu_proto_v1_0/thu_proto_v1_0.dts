@@ -28,7 +28,7 @@
 		};
 		relaisout0set: relais_output0_set {
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
-			label = "Relais 0 for switching on 230V 16A";
+			label = "Relais 0 for switching on 230V 16A or toggling led on devKit";
 		};
 		relaisout0reset: relais_output0_reset {
 			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
@@ -51,21 +51,20 @@
 
 	buttons {
 		compatible = "gpio-keys";
-		button0: button_0 {
-			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button switch 0";
+		button230v0a: button_230v_0_a {
+			//TODO: select right pin
+			gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "button input for 230V connected to two inputs (0a)";
 		};
-		button1: button_1 {
-			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;		//TODO: 14 eigentlich
-			label = "Push button switch 1";
+		button230v0b: button_230v_0_b {
+			//TODO: select right pin
+			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "button input for 230V connected to two inputs (ob)";
 		};
-		button2: button_2 {
+		button230v1: button_230v_1 {
+			//TODO: select right pin
 			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button switch 2";
-		};
-		button3: button_3 {
-			gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button switch 3";
+			label = "button input for 230V connected to one input (1)";
 		};
 	};
 
@@ -77,23 +76,24 @@
 		relaisout0reset = &relaisout0reset;
 		dcdcen = &dcdcen;
 		pwm-output0 = &pwm_output0;
-		sw0 = &button0;
-		sw1 = &button1;
-		sw2 = &button2;
-		sw3 = &button3;
+		button230v0a = &button230v0a;
+		button230v0b = &button230v0b;
+		button230v1 = &button230v1;
 		bootloader-led0 = &infoled0;
-		// mcuboot-button0 = &button230v0a;
+		mcuboot-button0 = &button230v0a;
 		mcuboot-led0 = &infoled0;
 		watchdog0 = &wdt0;
 		//added for Hausautomatisierung
 		//outputs
-		infogreenled = &warnled1;
+		healthinfoled = &warnled1;
 		relaisoutput = &relaisout0set;	//TODO: ist das Relais, keine led -> nur Impulse
+		relaiscloseoutput = &relaisout0set;
+		relaisopenoutput = &relaisout0reset;
 		dimmeroutput = &pwm_output0;
 		//inputs
-		relaistogglebutton = &button0;
-		dimmonoffbuttonrisingedge = &button2;
-		dimmonoffbuttonfallingedge = &button3;
+		relaistogglebutton = &button230v1;
+		dimmonoffbuttonrisingedge = &button230v0a;
+		dimmonoffbuttonfallingedge = &button230v0b;
 		// end of Hausautomatisierung
 	};
 };

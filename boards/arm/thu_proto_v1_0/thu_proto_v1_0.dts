@@ -52,11 +52,11 @@
 	buttons {
 		compatible = "gpio-keys";
 		button230v0a: button_230v_0_a {
-			gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio0 7 (GPIO_ACTIVE_LOW)>;
 			label = "button input for 230V connected to two inputs (0a)";
 		};
 		button230v0b: button_230v_0_b {
-			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio0 8 (GPIO_ACTIVE_LOW)>;
 			label = "button input for 230V connected to two inputs (ob)";
 		};
 	};

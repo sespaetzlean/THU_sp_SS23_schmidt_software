@@ -216,6 +216,15 @@ static void relais0_button_risEdge_cb(const struct device *port,
 {
 	LOG_DBG("Callback of %s button rising edge activated", port->name);
 	toggle_onoff(&relais0_ctr);
+	//TODO: remove test again
+	static bool toggled_on = false;
+	if (true == toggled_on){
+		attention_off(NULL);
+		toggled_on = false;
+	} else {
+		attention_on(NULL);
+		toggled_on = true;
+	}
 }
 
 /// @brief callback for a switch/lever to turn ON relais0_ctr OnOff-Server

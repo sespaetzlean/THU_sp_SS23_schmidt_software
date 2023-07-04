@@ -130,7 +130,7 @@ static void bt_ready(int err)
 
 static int16_t readTemperatureFromADC_wrapper(void)
 {
-	int16_t adc_value = read_adc_digital(&adc_ctx);
+	int16_t adc_value = 20; //read_adc_digital(&adc_ctx);
 	//TODO: convert adc value to temperature properly
 	return adc_value / 20;
 }

@@ -4,8 +4,9 @@
 LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
 
 //exp: choose relais type
-// #define __MONOSTABLE_RELAIS
-#define __BISTABLE_RELAIS
+#define __MONOSTABLE_RELAIS
+// #define __BISTABLE_RELAIS
+#define RELAIS_SET_TIME_MS 25
 
 //exp: choose type of button: button / lever 
 //exp: & if relais or dimmer shall be controlled
@@ -216,15 +217,6 @@ static void relais0_button_risEdge_cb(const struct device *port,
 {
 	LOG_DBG("Callback of %s button rising edge activated", port->name);
 	toggle_onoff(&relais0_ctr);
-	//TODO: remove test again
-	static bool toggled_on = false;
-	if (true == toggled_on){
-		attention_off(NULL);
-		toggled_on = false;
-	} else {
-		attention_on(NULL);
-		toggled_on = true;
-	}
 }
 
 /// @brief callback for a switch/lever to turn ON relais0_ctr OnOff-Server
@@ -302,12 +294,12 @@ static bool execute_relais1_set_wrapper(bool value)
 		if(value) 
 		{
 			gpio_pin_set_dt(&out1_setTog_spec, 1);
-			k_msleep(25);
+			k_msleep(RELAIS_SET_TIME_MS);
 			gpio_pin_set_dt(&out1_setTog_spec, 0);
 		}
 		else {
 			gpio_pin_set_dt(&out1_unset_spec, 1);
-			k_msleep(25);
+			k_msleep(RELAIS_SET_TIME_MS);
 			gpio_pin_set_dt(&out1_unset_spec, 0);
 		}
 	#else

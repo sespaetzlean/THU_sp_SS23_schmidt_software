@@ -39,40 +39,6 @@ static struct output_command* get_output_cmd(const struct temp_watchdog_ctx *tem
 
 // ==================== private functions ==================================== //
 
-/// @brief check if temperature is within bounds and up to date
-/// @param ctx helper struct
-/// @return true if temperature is within bounds, false if not
-static bool proof_legal_temperature(struct temp_watchdog_ctx *ctx)
-{
-    int64_t oldness_temp_value = k_uptime_delta(&ctx->last_fetched);
-    if(oldness_temp_value > TEMPERATURE_WATCHDOG_TEMPERATURE_OUTDATED_MS) {
-        LOG_WRN("Temperature value is too old: %lld ms", oldness_temp_value);
-        return false;
-    }
-    bool temp_ok = (ctx->temp <= TEMPERATURE_WATCHDOG_MAX_TEMP);
-    if(!temp_ok) {
-        LOG_WRN("Temperature out of bounds: %d", ctx->temp);
-        return false;
-    }
-    return true;
-}
-
-
-
-
-/// @brief fetch temperature and the current timestamp
-/// @param ctx helper struct to which values shall be saved
-static void fetch_temp_and_time(struct temp_watchdog_ctx *ctx)
-{
-    ctx->temp = ctx->fetch_temperature();
-    ctx->last_fetched = k_uptime_get();
-    LOG_DBG("Fetched temperature: %d & timestamp %lld", ctx->temp, ctx->last_fetched);
-}
-
-
-
-
-
 /// @brief turn off all appliances to their default value
 /// @param temp_ctx helper struct
 /// @return number of appliances that were turned off
@@ -105,6 +71,43 @@ static int turn_off_all_appliances(const struct temp_watchdog_ctx *temp_ctx)
         }
     }
     return success_counter;
+}
+
+
+
+
+
+/// @brief check if temperature is within bounds and up to date
+/// @param ctx helper struct
+/// @return true if temperature is within bounds, false if not
+static bool proof_legal_temperature(struct temp_watchdog_ctx *ctx)
+{
+    int64_t oldness_temp_value = k_uptime_delta(&ctx->last_fetched);
+    if(oldness_temp_value > TEMPERATURE_WATCHDOG_TEMPERATURE_OUTDATED_MS) {
+        LOG_ERR("Temperature value is too old: %lld ms", oldness_temp_value);
+        //for safety, turn off all appliances as a regular temperature check
+        //has not been done anymore
+        turn_off_all_appliances(ctx);
+        return false;
+    }
+    bool temp_ok = (ctx->temp <= TEMPERATURE_WATCHDOG_MAX_TEMP);
+    if(!temp_ok) {
+        LOG_WRN("Temperature out of bounds: %d", ctx->temp);
+        return false;
+    }
+    return true;
+}
+
+
+
+
+/// @brief fetch temperature and the current timestamp
+/// @param ctx helper struct to which values shall be saved
+static void fetch_temp_and_time(struct temp_watchdog_ctx *ctx)
+{
+    ctx->temp = ctx->fetch_temperature();
+    ctx->last_fetched = k_uptime_get();
+    LOG_DBG("Fetched temperature: %d & timestamp %lld", ctx->temp, ctx->last_fetched);
 }
 
 

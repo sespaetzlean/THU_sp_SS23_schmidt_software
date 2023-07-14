@@ -17,7 +17,7 @@ a smartphone via an application as shown in the following figure:
    :alt: Devices deployment diagram
 
 
-One possible application is Semiconductor's nRF Mesh mobile app installed in one of the following versions:
+One possible application for controlling the nodes via smartphone is Semiconductor's nRF Mesh mobile app installed in one of the following versions:
 
   * `nRF Mesh mobile app for Android`_
   * `nRF Mesh mobile app for iOS`_
@@ -35,6 +35,7 @@ Overview
 
 This software implements several generic models for smart home applications with a provisionee role in a mesh network.
 The models are used to:
+
 * control the relais output
 * control the pwm output, e.g. for dimming a light
 * send a message to control a relais in the network
@@ -88,6 +89,7 @@ User interface
 
 Input terminal:
    A 230V button or switch can be connected to this port. The element that is controlled by this button is set by one of the following define statements in :file:`src/model_handler.c`:
+
    * `__RELAIS_CTR_BY_BUTTON`: the Gen. OnOff Client is adressed. 
     On every push of the button, a message to toggle a relais is sent.
    * `__RELAIS_CTR_BY_LEVER`: the Gen. OnOff Client is adressed. 
@@ -97,13 +99,11 @@ Input terminal:
     On a long push, the level is increased or decreased respectively.
 
 LEDs:
-  * The InfoLED blinks when the device is identified during provisioning
-   or when the node overheated.
+  * The InfoLED blinks when the device is identified during provisioning or when the node overheated.
   * The WarnLED currently is not used.
 
 Output terminal:
-   * The relais is controlled by the Gen. OnOff Server.
-    It is approved for switching up to 230V AC at 16A.
+   * The relais is controlled by the Gen. OnOff Server. It is approved for switching up to 230V AC at 16A.
    * The PWM-output would be controlled by the Gen. Level Server. 
     The necessary assembly option currently is missing, consequently currently no (hardware) PWM-output is available.
     This model can still be used for testing purposes.

@@ -9,9 +9,9 @@ Software for smart home control via Bluetooth Mesh
 
 This software is supposed to be flashed onto the little sensor / actor pcbs.
 These boards will be able to communicate with each other via Bluetooth Mesh or with
-a smartphone via an application.
+a smartphone via an application as shown in the following figure:
 
-.. image:: out/figures/devices_deployment_diag/devices_deployment_diag.png
+.. figure:: out/figures/devices_deployment_diag/devices_deployment_diag.svg
    :width: 80%
    :align: center
    :alt: Devices deployment diagram
@@ -126,6 +126,14 @@ This sample is split into the following source files:
 * :file:`lvl_cli_mod.c` includes the level client model.
 * :file:`lightness_model.c` includes the lightness server.
 
+The following diagram shows the available structs and public functions each source file adds to the project.
+At too, the dependencies between the source files are shown:
+
+.. figure:: out/figures/func_struct_deployment/func_struct_deployment.svg
+   :width: 100%
+   :align: center
+   :alt: Source files with their structs, public functions and dependencies
+
 
 Using
 *****
@@ -165,6 +173,9 @@ Code Working principles
 Initialization:
 ===============
 
+Temperature watchdog:
+---------------------
+
 At first, the temperature watchdog is initialized.
 This is done in main.c.
 The watchdog is used to turn off the outputs in case of overheating.
@@ -175,7 +186,11 @@ The following picture illustrates the process, the needed parameters and structs
    :width: 80%
    :alt: Process for Temperature watchdog initialization
 
-   Temperature watchdog initialization
+   Process for Temperature watchdog initialization
+
+
+Model initialization:
+---------------------
 
 Then, the models are initialized.
 This is done in model_handler.c.
@@ -186,10 +201,72 @@ The following picture illustrates again the process, the needed parameters and s
    :width: 80%
    :alt: Process for Model initialization
 
-   Model initialization
+   Process for Model initialization
 
 
 Operation:
 ==========
+
+The following figure shows an example operation for controlling an onOff-server via an onOff-client.
+All the function calls between the different modules are listed here. This should give you a good overview of the code structure:
+
+.. figure:: out/figures/client_2_server_onOff_activity/client_2_server_onOff_activity.svg
+   :align: center
+   :width: 80%
+   :alt: Process for controlling an onOff-server via an onOff-client
+
+   Process for controlling an onOff-server via an onOff-client
+
+
+Details about the temperature watchdog functionality:
+-----------------------------------------------------
+
+
+The shown process relies on a fetch of the current temperature.
+The following figure shows the process for fetching the temperature, checking for overheating and turning off the outputs in case of overheating:
+
+.. figure:: out/figures/temp_wd_check_activity/temp_wd_check_activity.svg
+   :align: center
+   :width: 80%
+   :alt: Process for fetching and processing the temperature
+
+   Process for fetching and processing the temperature
+
+
+The temperature watchdog also prevents outputs from being turned on again during overheating.
+The following figure illustrates how this works:
+
+.. figure:: out/figures/temp_wd_switch_activity/temp_wd_switch_activity.svg
+   :align: center
+   :width: 80%
+   :alt: Mechanism for preventing outputs from being turned on during overheating
+
+   Mechanism for preventing outputs from being turned on during overheating
+
+
+
+Details about the Decider functionality for Dimming:
+----------------------------------------------------
+
+It is possible to dimm and turn on or off a light via a single button.
+By a short press, the light is turned on or off respectively.
+By a long press, the light is dimmed up or down respectively.
+The following figure shows the process in detail:
+
+.. figure:: out/figures/lvl_onOff_dim_dec_activity/lvl_onOff_dim_dec_activity.svg
+   :align: center
+   :width: 80%
+   :alt: Process for dimming and turning on or off a light via a single button
+
+   Process for dimming and turning on or off a light via a single button
+
+
+
+
+
+
+
+
+
 
 

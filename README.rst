@@ -198,7 +198,7 @@ The following picture illustrates again the process, the needed parameters and s
 
 .. figure:: out/figures/init_mesh_models_activity/init_mesh_models_activity.png
    :align: center
-   :width: 80%
+   :width: 100%
    :alt: Process for Model initialization
 
    Process for Model initialization
@@ -212,7 +212,7 @@ All the function calls between the different modules are listed here. This shoul
 
 .. figure:: out/figures/client_2_server_onOff_activity/client_2_server_onOff_activity.svg
    :align: center
-   :width: 80%
+   :width: 100%
    :alt: Process for controlling an onOff-server via an onOff-client
 
    Process for controlling an onOff-server via an onOff-client
@@ -227,7 +227,7 @@ The following figure shows the process for fetching the temperature, checking fo
 
 .. figure:: out/figures/temp_wd_check_activity/temp_wd_check_activity.svg
    :align: center
-   :width: 80%
+   :width: 60%
    :alt: Process for fetching and processing the temperature
 
    Process for fetching and processing the temperature
@@ -238,7 +238,7 @@ The following figure illustrates how this works:
 
 .. figure:: out/figures/temp_wd_switch_activity/temp_wd_switch_activity.svg
    :align: center
-   :width: 80%
+   :width: 50%
    :alt: Mechanism for preventing outputs from being turned on during overheating
 
    Mechanism for preventing outputs from being turned on during overheating

@@ -1,4 +1,4 @@
-.. _bluetooth_mesh_light:
+.. _bluetooth_mesh_smart_home:
 
 Software for smart home control via Bluetooth Mesh
 ##################################################

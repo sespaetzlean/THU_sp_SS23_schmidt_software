@@ -1,0 +1,14 @@
+@startuml
+left to right direction
+
+actor "User with phone" as user
+
+node "Node A" as NodeA
+
+node "Node B" as NodeB
+
+NodeA <<~~>> NodeB : "ble"
+NodeA <<~~>> user : "ble"
+NodeB <<~~>> user : "ble"
+
+@enduml

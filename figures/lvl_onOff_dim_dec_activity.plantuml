@@ -1,0 +1,53 @@
+@startuml
+
+start
+partition "initialisation" {
+    :call onOff_dim_decider_init;
+    note right
+    pass following parameters
+    ====
+    dimmable_cli_ctx: 
+    struct that saves information 
+    about the server to control
+    ----
+    onOff_dim_decider_data:
+    struct to save current 
+    state of dimming
+    end note
+    :add "onOff_dim_decider_pressed" 
+    as an interrupt function;
+    :add "onOff_dim_decider_released" 
+    as an interrupt function;
+}
+
+while (loop forever)
+:when button is pressed}
+if (last_pressed) then (true)
+    :skip, rising edge has been toggled consecutively}
+else (false)
+    :set last_pressed to true;
+    :schedule dimming process;
+    :start timer;
+    :when button is released}
+    if (last_pressed) then (false)
+        :skip, falling edge has been toggled consecutively}
+    else (true)
+        :set last_pressed to false;
+        :stop timer and calculate time pressed;
+        if (time pressed) then (< threshold)
+            note left
+                the time threshold is fixed 
+                in the constant 
+                "TIME_ONOFF_DIM_DECIDE_4_DIM"
+            end note
+            :cancel dimming process;
+            :call toggle process;
+        else (> threshold)
+            :stop dimming process;
+        endif
+    endif
+endif
+endwhile
+-[hidden]->
+detach
+@enduml

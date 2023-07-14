@@ -1,0 +1,66 @@
+@startuml
+' |function calls|
+    split
+    -[hidden]->
+    start
+    :init parameters}
+    split again
+    ' |parameters|
+    -[hidden]->
+    :function that returns current temperature/
+    -[dashed]->
+    split again
+    -[hidden]->
+    :function that notifies user about overheating/
+    -[dashed]->
+    split again
+    -[hidden]->
+    :function that notifies user 
+    about normalized temperature again/
+    -[dashed]->
+    split again
+    ' |structs|
+    -[hidden]->
+    :empty temp_watchdog_ctx struct|
+    -[dashed]->
+    end split
+' |function calls|
+#LightCoral:call "init_temperature_watchdog";
+partition "repeat for every output" {
+    split
+    :init parameters}
+    split again
+    -[hidden]->
+        split
+        ' |parameters|
+        -[hidden]->
+        :Command type (as enum)/
+        -[dashed]->
+        split again
+        ' |parameters|
+        -[hidden]->
+        :off value/
+        -[dashed]->
+        split again
+        ' |parameters|
+        -[hidden]->
+        :function call to set output/
+        -[dashed]->
+        end split
+        -[#Black]-> save parameters
+        in struct;
+        split
+        ' |parameters|
+        -[hidden]->
+        :cmd_number (as enum)/
+        -[dashed]->
+        split again
+        ' |structs|
+        :empty temp_watchdog_ctx struct|
+        end split
+    end split
+    ' |function calls|
+    #LightCoral:call "register_output_cmd";
+}
+stop
+@enduml

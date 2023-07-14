@@ -1,0 +1,63 @@
+@startuml
+|model handler|
+start
+:when button is pressed}
+:toggle_onoff(relais_cli_ctx) is called/
+|relais client model|
+:ack_unack_handler(relais_client_ctx, onOff_value) is called;
+if (address type) then (unicast)
+    :bt_mesh_onoff_cli_set(bt_mesh_onoff_cli, 
+            bt_mesh_onoff_set, 
+            bt_mesh_onoff_status) 
+    is called;
+    floating note right
+        with an ack-command, 
+        the server will return its status 
+        and save it to the passed bt_mesh_onoff_status
+    end note
+else (non unicast)
+    :bt_mesh_onoff_cli_set_unack(bt_mesh_onoff_cli, 
+            bt_mesh_onoff_set) 
+    is called;
+endif
+|mesh|
+: message is transmitted via ble-mesh stack and received by server(s)}
+|model handler|
+: stack calls "relais_set" of the relais_srv_ctx struct;
+|relais server model|
+:call function pointer"relais_output(onOff_value)" 
+(after some time if transition time or delay != 0);
+|model handler|
+:call "relaisX_safe_setWrapper(onOff_value)"/
+|temperature watchdog|
+:call "safely_switch_onOff(temp_watchdog_ctx, cmd_number, onOff_value)";
+if (temperature) then (overheated)
+else (normal)
+    :call function pointer "gpio_set(onOff_value)";
+|model handler|
+    :call function "execute_relaisX_set_wrapper(onOff_value)"/
+    :call function "gpio_pin_set_dt(onOff_value)";
+|temperature watchdog|
+endif
+:return actual set value;
+|model handler|
+if(ack demanded) then (yes)
+    :stack calls "relais_get()";
+|relais server model|
+    :call "relais_status()";
+|mesh|
+    :message is transmitted via ble-mesh stack and received by client}
+|model handler|
+    :stack calls "relais_status_handler()";
+|relais client model|
+    :status is saved in client helper struct;
+else (no)
+endif
+|model handler|
+stop
+
+
+
+
+
+@enduml

@@ -1,5 +1,5 @@
 @startuml
-left to right direction
+' left to right direction
 
 node Node {
     component "Element 1" as element1 {
@@ -20,5 +20,8 @@ node Node {
         frame "Model n" as model3n
     }
 }
+
+element1 -[hidden]right-> element2
+element2 -[hidden]right-> elementn
 
 @enduml

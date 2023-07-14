@@ -1,0 +1,30 @@
+@startuml
+start
+:initialise temperature watchdog;
+:register output commands;
+note left
+    new commands can also 
+    be registered later 
+    during the infinity loop
+end note
+while (loop forever)
+    :read and save current temperature value;
+    if (currently overheated) then (false)
+        if (Temperature value) then (to high)
+            :set overheated to true;
+            :call notify overheating function;
+            :turn off all registered outputs;
+        else (ok)
+        endif
+    else (true)
+        if (Temperature value) then (to high)
+        else (ok)
+            :set overheated to false;
+            :call notify normalized function;
+        endif
+    endif
+    :reschedule;
+endwhile
+-[hidden]->
+detach
+@enduml

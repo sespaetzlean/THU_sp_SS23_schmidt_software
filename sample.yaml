@@ -13,7 +13,8 @@ tests:
       - thingy53_nrf5340_cpuapp
       - thingy53_nrf5340_cpuapp_ns
       - nrf21540dk_nrf52840
+      - thu_proto_v1_0
     platform_allow: nrf52dk_nrf52832 nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp
       nrf5340dk_nrf5340_cpuapp_ns thingy53_nrf5340_cpuapp thingy53_nrf5340_cpuapp_ns
-      nrf21540dk_nrf52840 nrf52833dk_nrf52833
+      nrf21540dk_nrf52840 nrf52833dk_nrf52833 thu_proto_v1_0
     tags: bluetooth ci_build

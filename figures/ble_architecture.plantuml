@@ -1,0 +1,27 @@
+@startuml
+' left to right direction
+
+node Node {
+    component "Element 1" as element1 {
+        frame "Configuration Server" as configserver
+        frame "Health Server" as healthserver
+        frame "Model a" as model1a
+        frame "Model b" as model1b
+        frame "Model n" as model1n
+    }
+    component "Element 2" as element2 {
+        frame "Model a" as model2a
+        frame "Model b" as model2b
+        frame "Model n" as model2n
+    }
+    component "Element n" as elementn {
+        frame "Model a" as model3a
+        frame "Model b" as model3b
+        frame "Model n" as model3n
+    }
+}
+
+element1 -[hidden]right-> element2
+element2 -[hidden]right-> elementn
+
+@enduml

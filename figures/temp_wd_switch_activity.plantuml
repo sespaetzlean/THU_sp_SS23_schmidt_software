@@ -1,0 +1,22 @@
+@startuml
+start
+:call switch_safely_... via cmd_number;
+if(cmd_number) then (valid)
+    if (temperature up-to-date) then (yes)
+        if (temperature) then (ok)
+            if(right command type) then (yes)
+                :switch to new value;
+            else (no)
+            endif
+        else (to high)
+        endif
+
+    else (no)
+        :turn off all appliances;
+    endif
+else (not valid)
+endif
+:return physically set value 
+or off_value if error occurred;
+stop
+@enduml

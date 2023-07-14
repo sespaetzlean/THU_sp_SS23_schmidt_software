@@ -1,0 +1,224 @@
+@startuml
+left to right direction
+
+allowmixing
+
+file main
+file model_handler {
+    hexagon model_handler_init
+}
+file conversion_helpers {
+    hexagon mesh_level2struct_level
+    hexagon struct_level2mesh_level
+}
+file gpio_pwm_helpers {
+    hexagon single_device_init
+    hexagon lc_pwm_output_set
+    hexagon configure_gpi_interrupt
+
+    rectangle adc #line.dotted {
+        struct adc_channel_ctx {
+            int16_t buf;
+            struct adc_sequence sequence;
+            const struct adc_dt_spec *adc_channel;
+        }
+        hexagon adc_pin_init
+        hexagon read_adc_digital
+        hexagon read_adc_volt
+    }
+}
+file health_model {
+    hexagon attention_on
+    hexagon attention_off
+    hexagon attention_init
+}
+file lvl_cli_mod {
+    struct dimmable_cli_ctx {
+        uint16_t current_lvl;
+        uint16_t target_lvl;
+        struct bt_mesh_lvl_cli client;
+    }
+    hexagon level_status_handler
+    hexagon set_level
+    hexagon move_level
+
+    rectangle dimm_decider_functionality #line.dotted {
+        struct onOff_dim_decider_data {
+            struct dimmable_cli_ctx *client_ctx;
+            uint16_t last_lvl;
+            struct k_work_delayable dec_work;
+            bool last_increased;
+            int64_t timestamp;
+            bool last_pressed;
+        }
+        hexagon onOff_dim_decider_init
+        hexagon onOff_dim_decider_pressed
+        hexagon onOff_dim_decider_released
+    }
+}
+file lvl_model {
+    struct dimmable_srv_ctx {
+        struct bt_mesh_lvl_srv srv;		//server instance
+        struct k_work_delayable work;
+        uint32_t remaining_time;		
+        uint32_t time_period;			
+        uint16_t current_lvl;
+        uint16_t target_lvl;
+        int16_t move_step; 				
+        uint16_t (*pwm_output)(uint16_t level);	//function pointer to execute set value
+    }
+    hexagon dimmable_set
+    hexagon dimmable_get
+    hexagon dimmable_move_set
+    hexagon dimmable_work
+    hexagon dimmable_update
+}
+file relais_cli_mod {
+    struct relais_cli_ctx {
+        bool status;
+        struct bt_mesh_onoff_cli client;
+    }
+    hexagon relais_status_handler
+    hexagon toggle_onoff
+    hexagon set_onoff
+}
+file relais_model {
+    struct relais_srv_ctx {
+        struct bt_mesh_onoff_srv srv;
+        struct k_work_delayable work;
+        uint32_t remaining;
+        bool value;
+        bool (*relais_output)(bool onOFF_value);	
+    }
+    hexagon relais_set
+    hexagon relais_get
+    hexagon relais_work
+    hexagon relais_update
+}
+file temperature_watchdog {
+    enum output_command_type {
+        OUTPUT_COMMAND_TYPE_ONOFF
+        OUTPUT_COMMAND_TYPE_LEVEL
+    }
+    struct output_command {
+        int cmd_type
+        union off_value
+        union function_set_pointer
+    }
+    struct temp_watchdog_ctx {
+        int16_t temp;
+        int64_t last_fetched;
+        int16_t (*fetch_temperature)(void);
+        struct k_work_delayable work;
+        struct output_command* output_commands[NUMBER_OF_OUTPUTS];
+        void (*notify_overheating)(void);
+        void (*notify_normalized)(void);
+        bool overheated;
+    }
+    hexagon init_temperature_watchdog
+    hexagon safely_switch_X
+    hexagon register_output_cmd
+    hexagon deregister_output_cmd
+}
+
+' main included
+temperature_watchdog ..> main #blue : included
+gpio_pwm_helpers ..> main #blue : included
+health_model ..> main #blue : included
+
+' model_handler
+temperature_watchdog ..> model_handler #blue : included
+health_model ..> model_handler #blue : included
+relais_cli_mod ..> model_handler #blue : included
+relais_model ..> model_handler #blue : included
+lvl_cli_mod ..> model_handler #blue : included
+lvl_model ..> model_handler #blue : included
+gpio_pwm_helpers ..> model_handler #blue : included
+
+' models
+gpio_pwm_helpers ..> health_model #blue : included
+conversion_helpers ..> lvl_cli_mod #blue : included
+conversion_helpers ..> lvl_model #blue : included
+
+
+
+' temp watchdog
+        output_command_type *-- output_command
+        output_command *-- temp_watchdog_ctx
+        output_command ..|> register_output_cmd
+        register_output_cmd --> temp_watchdog_ctx : add output_command
+        deregister_output_cmd --> temp_watchdog_ctx : remove output_command by cmd_number
+        init_temperature_watchdog --> temp_watchdog_ctx : initialize empty struct
+        temp_watchdog_ctx ..|> safely_switch_X
+        
+
+' relais server model
+        relais_srv_ctx <-- relais_get : write updated values
+        relais_srv_ctx ..|> relais_set
+        relais_srv_ctx ..|> relais_work
+        relais_update --> relais_srv_ctx : write updated values
+
+
+' relais client model
+        relais_cli_ctx ..|> toggle_onoff
+        relais_cli_ctx ..|> set_onoff
+        relais_status_handler --> relais_cli_ctx : write updated values
+
+
+' level server model
+        dimmable_srv_ctx <-- dimmable_get : write updated values
+        dimmable_srv_ctx ..|> dimmable_set
+        dimmable_srv_ctx ..|> dimmable_move_set
+        dimmable_srv_ctx ..|> dimmable_work
+        dimmable_update --> dimmable_srv_ctx : write updated values
+
+
+' level client model
+        dimmable_cli_ctx ..|> set_level
+        dimmable_cli_ctx ..|> move_level
+        level_status_handler --> dimmable_cli_ctx  : write updated values
+
+        dimmable_cli_ctx *-- onOff_dim_decider_data
+        dimmable_cli_ctx ..|> onOff_dim_decider_init
+        onOff_dim_decider_init --> onOff_dim_decider_data : initialize empty struct
+        onOff_dim_decider_data ..|> onOff_dim_decider_pressed
+        onOff_dim_decider_data ..|> onOff_dim_decider_released
+
+
+' gpio pwm helpers
+        adc_pin_init --> adc_channel_ctx : initialize struct
+        adc_channel_ctx ..|> read_adc_digital
+        adc_channel_ctx ..|> read_adc_volt
+
+
+' model handler
+        'health model
+        attention_on o..> model_handler #Green : function pointer
+        attention_off o..> model_handler #Green : function pointer
+        'level client
+        ' set_level ..> model_handler #Red : calls
+        ' move_level ..> model_handler #Red : calls
+        level_status_handler o..> model_handler #Green : function pointer
+        'relais client
+        ' toggle_onoff ..> model_handler #Red : calls
+        ' set_onoff ..> model_handler #Red : calls
+        relais_status_handler o..> model_handler #Green : function pointer
+        'level server
+        dimmable_update o..> model_handler #Green : function pointer
+        dimmable_move_set o..> model_handler #Green : function pointer
+        dimmable_get o..> model_handler #Green : function pointer
+        dimmable_set o..> model_handler #Green : function pointer
+        'relais server
+        relais_update o..> model_handler #Green : function pointer
+        relais_set o..> model_handler #Green : function pointer
+        relais_get o..> model_handler #Green : function pointer
+
+
+' main
+        'health model
+        attention_on o..> main #Green : function pointer
+        attention_off o..> main #Green : function pointer
+
+
+
+@enduml

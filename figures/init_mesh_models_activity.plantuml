@@ -1,0 +1,100 @@
+@startuml
+start
+split
+    split
+        ' health & customize services
+        -[hidden]->
+        :create bt_mesh_health_server_cb
+        by giving attention_on & attention_off
+        function pointers>
+        -[dotted]->
+        :create bt_mesh_health_srv;
+        -[dotted]->
+        split
+            :define bt_mesh_model_pub;
+            -[dotted]->
+            split again
+            -[dotted]->
+        end split
+        -[dotted]->
+        split again
+        ' relais server
+        split
+            -[hidden]->
+            :create bt_mesh_onoff_srv_handlers
+            by giving relais_set & relais_get
+            function pointers>
+            -[dotted]->
+            split again
+            -[hidden]->
+            :create relaisX_safe_setWrapper/
+            -[dotted]->
+        end split
+        -[dotted]->
+        :create relais_srv_ctx;
+        -[dotted]->
+    end split
+    -[dotted]->
+    :create bt_mesh_model for relais_server;
+    -[dotted]->
+    split again
+    ' level server
+    split
+        -[hidden]->
+        :create bt_mesh_lvl_srv_handlers
+        by giving dimmable_set, dimmable_get & dimmable_move_set
+        function pointers>
+        -[dotted]->
+        split again
+        -[hidden]->
+        :create dimmerX_safe_setWrapper/
+        -[dotted]->
+    end split
+    -[dotted]->
+    :create dimmable_server_ctx;
+    -[dotted]->
+    :create bt_mesh_model for level_server;
+    -[dotted]->
+    split again
+    ' relais client
+    -[hidden]->
+    :create relais_client_ctx
+    by giving relais_status_handler
+    function pointer>
+    -[dotted]->
+    :create bt_mesh_model for relais_client;
+    -[dotted]->
+    split again
+    ' level client
+    -[hidden]->
+    :create level_client_ctx
+    by giving level_status_handler
+    function pointer>
+    -[dotted]->
+    :create bt_mesh_model for level_client;
+    -[dotted]->
+end split
+-[dotted]->
+:create bt_mesh_elem array;
+-[dotted]->
+:create bt_mesh_comp;
+partition "model_handler_init" {
+    :initialize gpios;
+    :initialize interrupts;
+    :initialize dim_decider;
+    note right
+    for this, an empty instance of 
+    "onOff_dim_decider_data" is needed
+    end note
+    :register output commands to temperature watchdog;
+    note right
+    for every output you need:
+    * the temperature watchdog instance
+    * the created output_cmd struct
+    * a cmd_number (usually via enum)
+    end note
+    :initialize work queue items of model classes;
+    :return composition|
+}
+stop
+@enduml

@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_THU_PROTO_V1_0
+
+config BOARD
+	default "thu_proto_v1_0"
+
+config BT_CTLR
+   default BT
+
+endif # BOARD_THU_PROTO_V1_0

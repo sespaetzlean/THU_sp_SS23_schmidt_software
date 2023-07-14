@@ -1,82 +1,64 @@
-.. _bluetooth_mesh_light:
+.. _bluetooth_mesh_smart_home:
 
-Bluetooth: Mesh light
-#####################
+Software for smart home control via Bluetooth Mesh
+##################################################
 
 .. contents::
    :local:
    :depth: 2
 
-The Bluetooth® mesh light sample demonstrates how to set up a mesh server model application, and control LEDs with Bluetooth mesh using the :ref:`bt_mesh_onoff_readme`.
+This software is supposed to be flashed onto the little sensor / actor pcbs.
+These boards will be able to communicate with each other via Bluetooth Mesh or with
+a smartphone via an application as shown in the following figure:
 
-.. note::
-   This sample is self-contained, and can be tested on its own.
-   However, it is required when testing the :ref:`bluetooth_mesh_light_switch` sample.
+.. figure:: out/figures/devices_deployment_diag/devices_deployment_diag.svg
+   :width: 80%
+   :align: center
+   :alt: Devices deployment diagram
 
-This sample also provides support for point-to-point Device Firmware Update (DFU) over the Simple Management Protocol (SMP).
 
-Requirements
-************
-
-The sample supports the following development kits:
-
-.. table-from-sample-yaml::
-
-The sample also requires a smartphone with Nordic Semiconductor's nRF Mesh mobile app installed in one of the following versions:
+One possible application for controlling the nodes via smartphone is Semiconductor's nRF Mesh mobile app installed in one of the following versions:
 
   * `nRF Mesh mobile app for Android`_
   * `nRF Mesh mobile app for iOS`_
 
-.. note::
-   |thingy53_sample_note|
+Requirements
+************
 
-.. include:: /includes/tfm.txt
+The sample supports the following hardware:
 
-DFU requirements
-================
-
-The configuration overlay :file:`overlay-dfu.conf` enables DFU support in the application, and applies for the following platforms:
-
-* nrf52840dk_nrf52840
-* nrf21540dk_nrf52840
-
-While this overlay configuration is only applicable for the mentioned platforms in this sample, DFU over Bluetooth Low Energy may be used on other platforms as well.
-
-Take the flash size into consideration when using DFU over Bluetooth LE on other platforms.
-For example, both nRF52832 and nRF52833 have limited flash size.
-
-.. note::
-   Point-to-point DFU over Bluetooth Low Energy for :ref:`zephyr:thingy53_nrf5340` is supported by default.
-   See :ref:`thingy53_app_update` for more information about updating firmware image on :ref:`zephyr:thingy53_nrf5340`.
-
-The DFU feature also requires a smartphone with Nordic Semiconductor's nRF Device Manager mobile app installed in one of the following versions:
-
-* `nRF Device Manager mobile app for Android`_
-* `nRF Device Manager mobile app for iOS`_
+* `nRF52832 DK`_
+* `thu prototype pcb V1.0`_
 
 Overview
 ********
 
-The mesh light sample is a Generic OnOff Server with a provisionee role in a mesh network.
-There can be one or more servers in the network, for example light bulbs.
+This software implements several generic models for smart home applications with a provisionee role in a mesh network.
+The models are used to:
 
-The sample instantiates up to four instances of the Generic OnOff Server model for controlling LEDs.
-The number of OnOff Server instances depends on available LEDs, as defined in board DTS file.
+* control the relais output
+* control the pwm output, e.g. for dimming a light
+* send a message to control a relais in the network
+* send a message to control (change pwm or turn on or off) a pwm output in the network
 
 Provisioning is performed using the `nRF Mesh mobile app`_.
-This mobile application is also used to configure key bindings, and publication and subscription settings of the Bluetooth mesh model instances in the sample.
-After provisioning and configuring the mesh models supported by the sample in the `nRF Mesh mobile app`_, you can control the LEDs on the development kit from the app.
+This mobile application is also used to configure key bindings, and publication and subscription settings of the Bluetooth mesh model instances.
+After provisioning and configuring the mesh models supported by the sample in the `nRF Mesh mobile app`_, you can control the outputs of the pcb.
 
 Provisioning
 ============
 
-The provisioning is handled by the :ref:`bt_mesh_dk_prov`.
-It supports four types of out-of-band (OOB) authentication methods, and uses the Hardware Information driver to generate a deterministic UUID to uniquely represent the device.
+The provisioning is handled by the function ``bt_mesh_MY_prov_init`` in :file:`src/main.c`.
+No OOB authentication is supported, but the board will blink during identification.
+This allows the user to identify the board he currently is provisioning.
 
 Models
 ======
 
-The following table shows the mesh light composition data for this sample:
+The following table shows the node composition for the prototype boards. 
+All these elements will be available on the boards, although the boards don't necessarily support all these elements. 
+This depends on what assembly option has been chosen for the board (e.g. if a relais is installed on the board).
+The user is responsible for only adding application keys to the elements that are available on the board.
 
 .. table::
    :align: center
@@ -84,135 +66,207 @@ The following table shows the mesh light composition data for this sample:
    =================  =================  =================  =================
    Element 1          Element 2          Element 3          Element 4
    =================  =================  =================  =================
-   Config Server      Gen. OnOff Server  Gen. OnOff Server  Gen. OnOff Server
+   Config Server      Gen. Level Server  Gen. OnOff Client  Gen. Level Client
    Health Server
    Gen. OnOff Server
    =================  =================  =================  =================
 
-.. note::
-   When used with :ref:`zephyr:thingy53_nrf5340`, Element 4 is not available.
-   :ref:`zephyr:thingy53_nrf5340` supports only one RGB LED, and treats each RGB LED channel as a separate LED.
 
 The models are used for the following purposes:
 
-* :ref:`bt_mesh_onoff_srv_readme` instances in elements 1 to N, where N is number of on board LEDs, each control LEDs 1 to N, respectively.
-* Config Server allows configurator devices to configure the node remotely.
+* Config Server allows configurator devices to configure the node remotely (this is a standard model every node possesses).
 * Health Server provides ``attention`` callbacks that are used during provisioning to call your attention to the device.
-  These callbacks trigger blinking of the LEDs.
+  These callbacks trigger blinking of the InfoLED (this is a standard model every node possesses).
+* Generic OnOff Server is used to control the relais on the board.
+* Generic OnOff Client is used to send a toggle message to a Gen. OnOff Server, so to switch the relais on or off.
+* Generic Level Server is used to control the brightness of an LED actor (dimming).
+* Generic Level Client is used to change the level or turn on or off of a Gen. Level Server, so to e.g. control a dimmable LED.
 
-The model handling is implemented in :file:`src/model_handler.c`, which uses the :ref:`dk_buttons_and_leds_readme` library to control each LED on the development kit according to the matching received messages of Generic OnOff Server.
+The model handling is implemented in :file:`src/model_handler.c`.
 
 User interface
 **************
 
-Buttons:
-   Can be used to input the OOB authentication value during provisioning.
-   All buttons have the same functionality during this procedure.
+Input terminal:
+   A 230V button or switch can be connected to this port. The element that is controlled by this button is set by one of the following define statements in :file:`src/model_handler.c`:
+
+   * `__RELAIS_CTR_BY_BUTTON`: the Gen. OnOff Client is adressed. 
+    On every push of the button, a message to toggle a relais is sent.
+   * `__RELAIS_CTR_BY_LEVER`: the Gen. OnOff Client is adressed. 
+    The relais is turned on, when the switch connects line and is turned off, when line is disconnected through the switch.
+   * `__DIMM_CTR_BY_BUTTON`: the Gen. Level Client is adressed. 
+    On a short push, the PWM-output is toggled on or off respectively. 
+    On a long push, the level is increased or decreased respectively.
 
 LEDs:
-   Show the OOB authentication value during provisioning if the "Push button" OOB method is used.
-   Show the OnOff state of the Generic OnOff Server of the corresponding element.
+  * The InfoLED blinks when the device is identified during provisioning or when the node overheated.
+  * The WarnLED currently is not used.
 
-Configuration
-*************
+Output terminal:
+   * The relais is controlled by the Gen. OnOff Server. It is approved for switching up to 230V AC at 16A.
+   * The PWM-output would be controlled by the Gen. Level Server. 
+    The necessary assembly option currently is missing, consequently currently no (hardware) PWM-output is available.
+    This model can still be used for testing purposes.
 
-|config|
-
-|nrf5340_mesh_sample_note|
 
 Source file setup
-=================
+*****************
 
 This sample is split into the following source files:
 
-* :file:`main.c` used to handle initialization.
-* :file:`model_handler.c` used to handle mesh models.
+* :file:`main.c` used to handle temperature watchdog initialization, provisioning and calls Bluetooth initialization.
+* :file:`temperature_watchdog.c` used to regularly check pcb temperature and turn off the outputs in case of overheating.
+* :file:`gpio_pwm_helpers.c` includes functions for initializing gpio and pwm pins.
+* :file:`conversion_helpers.c` includes general helper functions (transform data types, ...)
+* :file:`model_handler.c` used to initialize and compose bluetooth mesh models.
+* :file:`health_model.c` includes the mandatory Mesh health model.
+* :file:`relais_model.c` includes the OnOff server model.
+* :file:`relais_cli_mod.c` includes the OnOff client model.
+* :file:`lvl_model.c` includes the level server model.
+* :file:`lvl_cli_mod.c` includes the level client model.
+* :file:`lightness_model.c` includes the lightness server.
 
-DFU configuration
-=================
+The following diagram shows the available structs and public functions each source file adds to the project.
+At too, the dependencies between the source files are shown:
 
-To enable the DFU feature for the supported nRF52 Series development kits, set :makevar:`OVERLAY_CONFIG` to :file:`overlay-dfu.conf` when building the sample.
-For example, when building from the command line, use the following command:
+.. figure:: out/figures/func_struct_deployment/func_struct_deployment.svg
+   :width: 100%
+   :align: center
+   :alt: Source files with their structs, public functions and dependencies
 
-  .. code-block:: console
 
-     west build -b <BOARD> -p -- -DOVERLAY_CONFIG="overlay-dfu.conf"
+Using
+*****
 
-The configuration overlay :file:`overlay-dfu.conf` enables the DFU feature.
-To review the required configuration alterations, open and inspect the :file:`overlay-dfu.conf` file.
-For more information about using configuration overlay files, see :ref:`zephyr:important-build-vars` in the Zephyr documentation.
+After programming, you can configure the mesh by using a smartphone with `nRF Mesh mobile app`_ installed.
+Configuration consists of provisioning the device and configuring the appropriate models.
 
-FEM support
-===========
-
-.. include:: /includes/sample_fem_support.txt
-
-Building and running
-********************
-
-.. |sample path| replace:: :file:`samples/bluetooth/mesh/light`
-
-.. include:: /includes/build_and_run_ns.txt
-
-.. _bluetooth_mesh_light_testing:
-
-Testing
-=======
-
-After programming the sample to your development kit, you can test it by using a smartphone with `nRF Mesh mobile app`_ installed.
-Testing consists of provisioning the device and configuring it for communication with the mesh models.
 
 Provisioning the device
------------------------
+=======================
 
-.. |device name| replace:: :guilabel:`Mesh Light`
+The provisioning assigns an address range to the device, and adds it to the mesh network. 
+Complete the following steps in the nRF Mesh app:
 
-.. include:: /includes/mesh_device_provisioning.txt
+   * Tap `Add node` to start scanning for unprovisioned mesh devices.
+   * Select the `THU SH Mesh` device to connect to it.
+   * Tap Identify (InfoLED starts blinking), and then Provision, to provision the device.
+
+Once the provisioning is complete, the app returns to the Network screen.
 
 Configuring models
-------------------
+==================
 
-See :ref:`ug_bt_mesh_model_config_app` for details on how to configure the mesh models with the nRF Mesh mobile app.
+It is practical to only configure the models that have corresponding hardware present on the node.
 
-Configure the Generic OnOff Server model on each element on the **Mesh Light** node:
+  1. Bind the model to an Application key (all models with the same application key are able to communicate with each other)
 
-* Bind the model to **Application Key 1**.
+You can already control the server element via the app now.
 
-  Once the model is bound to the application key, you can control the first LED on the device.
-* In the model view, tap :guilabel:`ON` (one of the Generic On Off Controls) to light up the first LED on the development kit.
+  2. If a client: Add a publish address to the client. The address determines to which server(s) the commands will be send to.
 
-Make sure to complete the configuration on each of the elements on the node to enable controlling each of the remaining three LEDs.
 
-Running DFU
-===========
 
-After the sample is built with the :file:`overlay-dfu.conf` and programmed to your development kit, support for FOTA update is enabled.
-See :ref:`FOTA over Bluetooth Low Energy<ug_nrf52_developing_ble_fota>` for instructions on how to perform FOTA update and initiate the DFU process.
+Code Working principles
+***********************
 
-Dependencies
-************
+Initialization:
+===============
 
-This sample uses the following |NCS| libraries:
+Temperature watchdog:
+---------------------
 
-* :ref:`bt_mesh_onoff_srv_readme`
-* :ref:`bt_mesh_dk_prov`
-* :ref:`dk_buttons_and_leds_readme`
+At first, the temperature watchdog is initialized.
+This is done in main.c.
+The watchdog is used to turn off the outputs in case of overheating.
+The following picture illustrates the process, the needed parameters and structs that have to be defined.
 
-In addition, it uses the following Zephyr libraries:
+.. figure:: out/figures/temp_wd_init_activity/temp_wd_init_activity.svg
+   :align: center
+   :width: 80%
+   :alt: Process for Temperature watchdog initialization
 
-* ``include/drivers/hwinfo.h``
-* :ref:`zephyr:kernel_api`:
+   Process for Temperature watchdog initialization
 
-  * ``include/kernel.h``
 
-* :ref:`zephyr:bluetooth_api`:
+Model initialization:
+---------------------
 
-  * ``include/bluetooth/bluetooth.h``
+Then, the models are initialized.
+This is done in model_handler.c.
+The following picture illustrates again the process, the needed parameters and structs that have to be defined.
 
-* :ref:`zephyr:bluetooth_mesh`:
+.. figure:: out/figures/init_mesh_models_activity/init_mesh_models_activity.png
+   :align: center
+   :width: 100%
+   :alt: Process for Model initialization
 
-  * ``include/bluetooth/mesh.h``
+   Process for Model initialization
 
-The sample also uses the following secure firmware component:
 
-* :ref:`Trusted Firmware-M <ug_tfm>`
+Operation:
+==========
+
+The following figure shows an example operation for controlling an onOff-server via an onOff-client.
+All the function calls between the different modules are listed here. This should give you a good overview of the code structure:
+
+.. figure:: out/figures/client_2_server_onOff_activity/client_2_server_onOff_activity.svg
+   :align: center
+   :width: 100%
+   :alt: Process for controlling an onOff-server via an onOff-client
+
+   Process for controlling an onOff-server via an onOff-client
+
+
+Details about the temperature watchdog functionality:
+-----------------------------------------------------
+
+
+The shown process relies on a fetch of the current temperature.
+The following figure shows the process for fetching the temperature, checking for overheating and turning off the outputs in case of overheating:
+
+.. figure:: out/figures/temp_wd_check_activity/temp_wd_check_activity.svg
+   :align: center
+   :width: 60%
+   :alt: Process for fetching and processing the temperature
+
+   Process for fetching and processing the temperature
+
+
+The temperature watchdog also prevents outputs from being turned on again during overheating.
+The following figure illustrates how this works:
+
+.. figure:: out/figures/temp_wd_switch_activity/temp_wd_switch_activity.svg
+   :align: center
+   :width: 50%
+   :alt: Mechanism for preventing outputs from being turned on during overheating
+
+   Mechanism for preventing outputs from being turned on during overheating
+
+
+
+Details about the Decider functionality for Dimming:
+----------------------------------------------------
+
+It is possible to dimm and turn on or off a light via a single button.
+By a short press, the light is turned on or off respectively.
+By a long press, the light is dimmed up or down respectively.
+The following figure shows the process in detail:
+
+.. figure:: out/figures/lvl_onOff_dim_dec_activity/lvl_onOff_dim_dec_activity.svg
+   :align: center
+   :width: 80%
+   :alt: Process for dimming and turning on or off a light via a single button
+
+   Process for dimming and turning on or off a light via a single button
+
+
+
+
+
+
+
+
+
+
+

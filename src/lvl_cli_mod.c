@@ -111,9 +111,7 @@ static int ack_unack_move_handler(struct dimmable_cli_ctx *c_ctx,
 		LOG_DBG("Cli sent UNack cmd: move step %d, pause %d", 
 			set->delta, 
 			set->transition->time);
-        //TODO
         //exp no artificial response here, as level moves anyway
-		//? how to get the actual level of the appliance
 	}
 	if (err) {
 		LOG_WRN("Lvl moving failed: %d\n", err);

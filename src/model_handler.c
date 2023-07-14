@@ -4,9 +4,9 @@
 LOG_MODULE_REGISTER(models,LOG_LEVEL_DBG);
 
 //exp: choose relais type
-#define __MONOSTABLE_RELAIS
-// #define __BISTABLE_RELAIS
-#define RELAIS_SET_TIME_MS 25
+// #define __MONOSTABLE_RELAIS
+#define __BISTABLE_RELAIS
+#define RELAIS_SET_TIME_MS 21
 
 //exp: choose type of button: button / lever 
 //exp: & if relais or dimmer shall be controlled

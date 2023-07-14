@@ -40,7 +40,7 @@ struct output_command {
         bool (*gpio_set)(bool value);
         uint16_t (*pwm_set)(uint16_t value);
     };
-    // these function pointers shall inform 
+    // these function pointers shall update 
     // the respective structs of the appliances
     // e.g. when all appliances had to be turned off
     union {
@@ -54,7 +54,7 @@ struct temp_watchdog_ctx {
     int16_t temp;
     //time when temperature was last read
     int64_t last_fetched;
-    //function that returns the current temperature
+    //function that reads & returns the current temperature
     int16_t (*fetch_temperature)(void);
     //work function that gets scheduled regularly
     struct k_work_delayable work;
@@ -62,7 +62,7 @@ struct temp_watchdog_ctx {
     struct output_command* output_commands[NUMBER_OF_OUTPUTS];
     //functions to execute when overheating occurred ...
     void (*notify_overheating)(void);
-    // .. and chip cooled down again
+    // .. and pcb cooled down again
     void (*notify_normalized)(void);
     // store if currently overheated
     bool overheated;

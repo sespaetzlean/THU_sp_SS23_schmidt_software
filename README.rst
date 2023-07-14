@@ -1,7 +1,7 @@
 .. _bluetooth_mesh_light:
 
 Software for smart home control via Bluetooth Mesh
-#####################
+##################################################
 
 .. contents::
    :local:
@@ -15,6 +15,7 @@ a smartphone via an application.
    :width: 80%
    :align: center
    :alt: Devices deployment diagram
+
 
 One possible application is Semiconductor's nRF Mesh mobile app installed in one of the following versions:
 
@@ -132,8 +133,9 @@ Using
 After programming, you can configure the mesh by using a smartphone with `nRF Mesh mobile app`_ installed.
 Configuration consists of provisioning the device and configuring the appropriate models.
 
+
 Provisioning the device
------------------------
+=======================
 
 The provisioning assigns an address range to the device, and adds it to the mesh network. 
 Complete the following steps in the nRF Mesh app:
@@ -145,7 +147,7 @@ Complete the following steps in the nRF Mesh app:
 Once the provisioning is complete, the app returns to the Network screen.
 
 Configuring models
-------------------
+==================
 
 It is practical to only configure the models that have corresponding hardware present on the node.
 
@@ -162,6 +164,29 @@ Code Working principles
 
 Initialization:
 ===============
+
+At first, the temperature watchdog is initialized.
+This is done in main.c.
+The watchdog is used to turn off the outputs in case of overheating.
+The following picture illustrates the process, the needed parameters and structs that have to be defined.
+
+.. figure:: ../out/figures/temp_wd_init_activity.png
+   :align: center
+   :width: 80%
+   :alt: Temperature watchdog initialization
+
+   Temperature watchdog initialization
+
+Then, the models are initialized.
+This is done in model_handler.c.
+The following picture illustrates again the process, the needed parameters and structs that have to be defined.
+
+.. figure:: ../out/figures/init_mesh_model_activity/init_mesh_model_activity.png
+   :align: center
+   :width: 80%
+   :alt: Model initialization
+
+   Model initialization
 
 
 Operation:

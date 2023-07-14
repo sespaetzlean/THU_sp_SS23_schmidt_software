@@ -170,10 +170,10 @@ This is done in main.c.
 The watchdog is used to turn off the outputs in case of overheating.
 The following picture illustrates the process, the needed parameters and structs that have to be defined.
 
-.. figure:: ../out/figures/temp_wd_init_activity.png
+.. figure:: out/figures/temp_wd_init_activity/temp_wd_init_activity.png
    :align: center
    :width: 80%
-   :alt: Temperature watchdog initialization
+   :alt: Process for Temperature watchdog initialization
 
    Temperature watchdog initialization
 
@@ -181,10 +181,10 @@ Then, the models are initialized.
 This is done in model_handler.c.
 The following picture illustrates again the process, the needed parameters and structs that have to be defined.
 
-.. figure:: ../out/figures/init_mesh_model_activity/init_mesh_model_activity.png
+.. figure:: out/figures/init_mesh_model_activity/init_mesh_model_activity.png
    :align: center
    :width: 80%
-   :alt: Model initialization
+   :alt: Process for Model initialization
 
    Model initialization
 

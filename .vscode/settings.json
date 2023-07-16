@@ -1,25 +1,33 @@
 {
     "cSpell.words": [
         "dcdcen",
+        "Dcdr",
         "delayable",
+        "DIMM",
         "dimmeroutput",
         "dimmonoffbuttonfallingedge",
         "dimmonoffbuttonrisingedge",
         "gpios",
+        "healthinfoled",
         "hwinfo",
-        "infogreenled",
         "LEDS",
+        "MONOSTABLE",
         "relais",
+        "relaiscloseoutput",
+        "relaisleverfallingedge",
+        "relaisleverrisingedge",
+        "relaisopenoutput",
         "relaisoutput",
         "relaistogglebutton",
         "unack",
         "unacked"
     ],
     "nrf-connect.applications": [
-        "c:\\Users\\sebas\\Documents\\GitHub\\THU_student_project_SS23_schmidt\\Software\\aktor_relais"
+        "f:\\Github\\sa_test"
     ],
     "files.associations": {
         "gpio_pwm_helpers.h": "c",
         "util.h": "c"
-    }
+    },
+    "esbonio.sphinx.confDir": ""
 }

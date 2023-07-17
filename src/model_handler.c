@@ -216,6 +216,7 @@ static void relais0_button_risEdge_cb(const struct device *port,
 			gpio_port_pins_t pins)
 {
 	LOG_DBG("Callback of %s button rising edge activated", port->name);
+	warn_on(NULL);
 	toggle_onoff(&relais0_ctr);
 }
 

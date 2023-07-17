@@ -31,6 +31,10 @@ void attention_off(struct bt_mesh_model *mod);
 /// @return 0 on success
 int attention_init();
 
+/// @brief function to execute when node shall warn
+/// @param mod 
+void warn_on(struct bt_mesh_model *mod);
+
 #ifdef __cplusplus
 }
 #endif

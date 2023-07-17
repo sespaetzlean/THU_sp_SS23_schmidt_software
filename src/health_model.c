@@ -12,9 +12,20 @@ static const struct gpio_dt_spec info_led_spec = GPIO_DT_SPEC_GET(INFO_LED_NODE,
 #error "Unsupported board: healthinfoled devicetree alias is not defined"
 #endif
 
+#define WARN_LED_NODE    DT_ALIAS(togglewarnled)
+
+#if DT_NODE_HAS_STATUS(WARN_LED_NODE, okay)
+static const struct gpio_dt_spec warn_led_spec = GPIO_DT_SPEC_GET(WARN_LED_NODE, gpios);
+#else
+#error "Unsupported board: togglewarnled devicetree alias is not defined"
+#endif
+
 
 static bool attention;
 static struct k_work_delayable attention_blink_work;
+
+
+
 
 
 /// @brief work struct that executes tasks to attract attention
@@ -45,10 +56,41 @@ void attention_off(struct bt_mesh_model *mod)
 	LOG_INF("Attention turned off");
 }
 
+
+
+ 
+// === toggle led === //
+
+static struct k_work_delayable warn_work;
+
+/// @brief work struct that executes tasks to attract attention
+/// @param work 
+static void warn_off(struct k_work *work)
+{
+	gpio_pin_set_dt(&warn_led_spec, 0);
+
+}
+
+void warn_on(struct bt_mesh_model *mod)
+{
+	LOG_DBG("Warn LED!");
+	gpio_pin_set_dt(&warn_led_spec, 1);
+	k_work_reschedule(&warn_work, K_MSEC(300));
+}
+
+
+
+// === initialise ===
+
 int attention_init()
 {
 	int err = abs(single_device_init(info_led_spec.port));
 	err += abs(gpio_pin_configure_dt(&info_led_spec, GPIO_OUTPUT_INACTIVE));	
 	k_work_init_delayable(&attention_blink_work, attention_blink);
+	//toggle init
+	err += abs(single_device_init(warn_led_spec.port));
+	err += abs(gpio_pin_configure_dt(&warn_led_spec, GPIO_OUTPUT_INACTIVE));
+	k_work_init_delayable(&warn_work, warn_off);
+
 	return err;
 }

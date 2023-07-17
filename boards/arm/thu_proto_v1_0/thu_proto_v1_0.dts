@@ -77,6 +77,7 @@
 		//added for Hausautomatisierung
 		//outputs
 		healthinfoled = &infoled0;
+		togglewarnled = &warnled1;
 		relaisoutput = &relaisout0set;
 		relaiscloseoutput = &relaisout0set;
 		relaisopenoutput = &relaisout0reset;
